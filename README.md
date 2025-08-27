@@ -198,10 +198,24 @@ dojo/
    ```
 
 10. **Visit the application**
-    - Open http://127.0.0.1:8000/ in your browser
+    - Welcome page: http://127.0.0.1:8000/ (for non-authenticated users)
+    - Dashboard: http://127.0.0.1:8000/dashboard/ (for authenticated users)
     - Admin interface: http://127.0.0.1:8000/admin/
+    
+    **Demo the welcome page:**
+    ```bash
+    python demo_welcome.py
+    ```
 
 ## 🎯 Core Features
+
+### Welcome Page
+- **Beautiful Landing Page**: Eye-catching welcome page with background color #FBF3D5
+- **Feature Showcase**: Highlights all key features with animated icons
+- **Call-to-Action**: Clear buttons for Sign Up and Sign In
+- **Responsive Design**: Works perfectly on all devices
+- **Smart Redirects**: Authenticated users are automatically redirected to dashboard
+- **Smooth Animations**: Engaging animations and transitions
 
 ### Dashboard
 - **Personal Todo Management**: Create, edit, delete, and mark todos as complete
