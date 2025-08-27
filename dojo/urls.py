@@ -18,10 +18,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from .views import welcome_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('apps.dashboard.urls')),
+    path('', welcome_view, name='welcome'),
+    path('dashboard/', include('apps.dashboard.urls')),
     path('accounts/', include('apps.accounts.urls')),
     path('courses/', include('apps.courses.urls')),
     path('calendar/', include('apps.calendarapp.urls')),

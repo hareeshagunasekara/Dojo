@@ -174,3 +174,14 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+
+# Image optimization
+*.webp
+*.avif
+
+# Large image files (uncomment if you want to exclude large images from git)
+# *.jpg
+# *.jpeg
+# *.png
+# *.gif
+# *.svg
