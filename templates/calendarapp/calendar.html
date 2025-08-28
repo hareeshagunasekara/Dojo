@@ -47,7 +47,7 @@
         background: #FBF3D5;
         border: 2px solid #000;
         color: #000;
-        padding: 4px 12px;
+        padding: 4px 16px;
         border-radius: 16px;
         font-weight: bold;
         transition: all 0.3s ease;
@@ -55,6 +55,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        gap: 8px;
     }
     
     .add-event-btn:hover {
@@ -95,7 +96,7 @@
         border-radius: 15px !important;
         font-weight: bold !important;
         color: #000 !important;
-        padding: 3px 8px !important;
+        padding: 3px 12px !important;
         font-size: 0.8rem !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
@@ -255,7 +256,7 @@
         }
         
         .fc-button {
-            padding: 2px 6px !important;
+            padding: 3px 10px !important;
             font-size: 0.75rem !important;
         }
         
@@ -271,6 +272,10 @@
         .fc-event {
             font-size: 0.65rem !important;
             padding: 1px 2px !important;
+        }
+        
+        .add-event-btn {
+            padding: 4px 14px !important;
         }
     }
     
@@ -746,7 +751,7 @@
             <img src="{% static 'img/icons/list.png' %}" alt="List Events" width="40" height="40">
         </button>
         <button class="btn add-event-btn" data-bs-toggle="modal" data-bs-target="#addEventModal">
-            <i class="bi bi-plus-circle"></i>   Event
+            <i class="bi bi-plus-circle"></i> Event
         </button>
     </div>
     
@@ -796,6 +801,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectMirror: true,
         dayMaxEvents: true,
         weekends: true,
+        firstDay: {% if week_start == 'sunday' %}0{% else %}1{% endif %},
         
         // Event data from Django
         events: [
@@ -803,8 +809,15 @@ document.addEventListener('DOMContentLoaded', function() {
             {
                 id: '{{ event.id }}',
                 title: '{{ event.title }}',
-                start: '{{ event.start_date|date:"Y-m-d" }}T{{ event.start_time|time:"H:i" }}',
-                end: '{{ event.end_date|date:"Y-m-d" }}T{{ event.end_time|time:"H:i" }}',
+                {% if event.is_all_day %}
+                start: '{{ event.start_date|date:"Y-m-d" }}',
+                end: '{{ event.end_date|date:"Y-m-d" }}',
+                allDay: true,
+                {% else %}
+                start: '{{ event.start_date|date:"Y-m-d" }}{% if event.start_time %}T{{ event.start_time|time:"H:i" }}{% endif %}',
+                end: '{{ event.end_date|date:"Y-m-d" }}{% if event.end_time %}T{{ event.end_time|time:"H:i" }}{% endif %}',
+                allDay: false,
+                {% endif %}
                 description: '{{ event.description|escapejs }}',
                 location: '{{ event.location|escapejs }}',
                 eventType: '{{ event.event_type }}',

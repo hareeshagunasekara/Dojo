@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reset Settings - Dojo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        background-color: #FBF3D5;
+        min-height: 100vh;
+        padding: 2rem;
+    }
+    
+    .settings-card {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #dc3545;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .settings-header {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-bottom: 1px solid #ddd;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .settings-header h2 {
+        color: #000;
+        font-weight: bold;
+        margin: 0;
+        font-size: 1.5rem;
+    }
+    
+    .settings-body {
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .warning-box {
+        background: #f8f9fa;
+        border: 1px solid #dc3545;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .warning-box h3 {
+        color: #dc3545;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+    
+    .warning-box p {
+        color: #000;
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+    
+    .btn-danger {
+        background: #dc3545;
+        border: 1px solid #dc3545;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+        padding: 0.5rem 1rem;
+        transition: background-color 0.2s;
+        margin: 0.25rem;
+    }
+    
+    .btn-danger:hover {
+        background: #c82333;
+        color: white;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: 1px solid #6c757d;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        transition: background-color 0.2s;
+        margin: 0.25rem;
+    }
+    
+    .btn-secondary:hover {
+        background: #545b62;
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-card">
+        <div class="settings-header">
+            <h2>Reset Settings</h2>
+        </div>
+        
+        <div class="settings-body">
+            <div class="warning-box">
+                <h3>Reset to Default</h3>
+                <p>This will reset all your settings to their default values. This action cannot be undone.</p>
+            </div>
+            
+            <p class="mb-4">Are you sure you want to reset your settings to default values?</p>
+            
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn-danger">
+                    Reset Settings
+                </button>
+            </form>
+            
+            <a href="{% url 'settingsapp:settings_view' %}" class="btn-secondary">
+                Cancel
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

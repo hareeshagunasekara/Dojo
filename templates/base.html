@@ -19,6 +19,52 @@
     <!-- Custom CSS -->
     <link href="{% static 'dojo.css' %}?v=1.1" rel="stylesheet">
     
+    <style>
+        /* Fixed Footer Styling */
+        .footer-fixed {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #FBF3D5;
+            border-top: 2px dotted #000;
+            padding: 1rem 0;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Add bottom padding to main content to prevent overlap with fixed footer */
+        main {
+            padding-bottom: 100px;
+            min-height: calc(100vh - 100px);
+        }
+        
+        /* Ensure body takes full height */
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Ensure content containers don't interfere with footer */
+        .container-fluid {
+            padding-bottom: 20px;
+        }
+        
+        /* Responsive adjustments for mobile */
+        @media (max-width: 768px) {
+            main {
+                padding-bottom: 120px;
+            }
+            
+            .footer-fixed {
+                padding: 0.75rem 0;
+            }
+        }
+    </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100">

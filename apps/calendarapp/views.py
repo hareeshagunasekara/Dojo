@@ -8,11 +8,24 @@ import json
 from datetime import datetime
 from .models import Event
 from .forms import EventForm
+from apps.settingsapp.models import UserSettings
 
 @login_required
 def calendar_view(request):
     events = Event.objects.filter(user=request.user)
-    return render(request, 'calendarapp/calendar.html', {'events': events})
+    
+    # Get user's week start preference
+    try:
+        user_settings = UserSettings.objects.get(user=request.user)
+        week_start = user_settings.default_week_start
+    except UserSettings.DoesNotExist:
+        week_start = 'monday'  # Default to Monday
+    
+    context = {
+        'events': events,
+        'week_start': week_start
+    }
+    return render(request, 'calendarapp/calendar.html', context)
 
 @login_required
 @require_http_methods(["POST"])
