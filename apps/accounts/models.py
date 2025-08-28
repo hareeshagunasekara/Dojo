@@ -10,6 +10,8 @@ class StudentProfile(models.Model):
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True)
     date_of_birth = models.DateField(blank=True, null=True)
+    school = models.CharField(max_length=100, blank=True)
+    year_level = models.CharField(max_length=20, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

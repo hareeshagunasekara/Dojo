@@ -1,7 +1,8 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+{% load static %}
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #FBF3D5;">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'dashboard:home' %}{% else %}{% url 'welcome' %}{% endif %}">
-            <i class="bi bi-mortarboard-fill"></i> Dojo
+        <a class="navbar-brand d-flex align-items-center" href="{% if user.is_authenticated %}{% url 'dashboard:home' %}{% else %}{% url 'welcome' %}{% endif %}">
+            <img src="{% static 'img/logos/logo.png' %}" alt="Dojo Logo" style="width: 50px; height: 50px; margin-right: 8px;">
         </a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -10,36 +11,50 @@
         
         <div class="collapse navbar-collapse" id="navbarNav">
             {% if user.is_authenticated %}
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard:home' %}">
-                            <i class="bi bi-house"></i> Dashboard
+                <ul class="navbar-nav mx-auto flex-fill justify-content-around">
+                    <li class="nav-item text-center">
+                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'dashboard:home' %}">
+                            <img src="{% static 'img/icons/home.png' %}" alt="Home" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
+                            <span class="navbar-title">Home</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'courses:course_list' %}">
-                            <i class="bi bi-book"></i> Courses
+                    <li class="nav-item text-center">
+                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'courses:course_list' %}">
+                            <img src="{% static 'img/icons/courses.png' %}" alt="Courses" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
+                            <span class="navbar-title">Courses</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'calendarapp:calendar_view' %}">
-                            <i class="bi bi-calendar3"></i> Calendar
+                    <li class="nav-item text-center">
+                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'calendarapp:calendar_view' %}">
+                            <img src="{% static 'img/icons/calendar.png' %}" alt="Calendar" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
+                            <span class="navbar-title">Calendar</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'schedule:schedule_view' %}">
-                            <i class="bi bi-clock"></i> Schedule
+                    <li class="nav-item text-center">
+                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'schedule:schedule_view' %}">
+                            <img src="{% static 'img/icons/schedule.png' %}" alt="Schedule" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
+                            <span class="navbar-title">Schedule</span>
+                        </a>
+                    </li>
+                    <li class="nav-item text-center">
+                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'settingsapp:settings_view' %}">
+                            <img src="{% static 'img/icons/settings.png' %}" alt="Settings" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
+                            <span class="navbar-title">Settings</span>
                         </a>
                     </li>
                 </ul>
                 
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> {{ user.username }}
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                            {% if user.studentprofile.avatar %}
+                                <img src="{{ user.studentprofile.avatar.url }}" alt="Profile Photo" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                            {% else %}
+                                <i class="bi bi-person-circle me-2"></i>
+                            {% endif %}
+                            {{ user.username }}
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Profile</a></li>
                             <li><a class="dropdown-item" href="{% url 'settingsapp:settings_view' %}">Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">Logout</a></li>
@@ -59,3 +74,69 @@
         </div>
     </div>
 </nav>
+
+<style>
+.navbar {
+    min-height: 70px;
+    align-items: center;
+}
+
+.navbar-brand {
+    height: 50px;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-brand img {
+    object-fit: contain;
+}
+
+.navbar-nav {
+    align-items: center;
+}
+
+.navbar-nav .nav-link {
+    transition: transform 0.2s ease;
+    color: rgba(0, 0, 0, 0.7) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    padding: 8px 12px;
+}
+
+.navbar-nav .nav-link:hover {
+    transform: scale(1.1);
+    color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.navbar-nav .nav-link:focus {
+    color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.navbar-nav .nav-link.active {
+    color: rgba(0, 0, 0, 0.9) !important;
+}
+
+.navbar-icon {
+    display: block;
+    margin: 0 auto;
+}
+
+.navbar-title {
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.navbar-toggler {
+    border: none;
+    padding: 4px 8px;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+</style>
+
+

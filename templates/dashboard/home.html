@@ -4,8 +4,14 @@
 {% block title %}Dashboard - Dojo{% endblock %}
 
 {% block content %}
+<!-- CSRF Token for JavaScript -->
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Dashboard</h1>
+    <div>
+        <h1 class="h2">Hi, {{ user.username }}</h1>
+        <p class="text-muted mb-0">{{ today|date:"l, F d, Y" }}</p>
+    </div>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addTodoModal">
@@ -15,70 +21,107 @@
     </div>
 </div>
 
-<!-- Stats Cards -->
+<!-- Student ID Card -->
 <div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card stats-card-primary">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5 class="card-title">Total Todos</h5>
-                        <h2 class="mb-0">{{ total_todos }}</h2>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-list-task" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card-success">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5 class="card-title">Completed</h5>
-                        <h2 class="mb-0">{{ completed_todos }}</h2>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card-accent">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5 class="card-title">Pending</h5>
-                        <h2 class="mb-0">{{ total_todos|add:"-"|add:completed_todos|add:"0" }}</h2>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-clock" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card-secondary">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5 class="card-title">Progress</h5>
-                        <h2 class="mb-0">
-                            {% if total_todos > 0 %}
-                                {{ completed_todos|floatformat:0 }}%
+    <div class="col-md-6">
+        <div class="card" style="border: 2px solid black; background-color: white; height: 200px; cursor: pointer;" onclick="openProfileModal()">
+            <div class="card-body p-3">
+                <div class="d-flex h-100">
+                    <!-- Photo Section -->
+                    <div class="d-flex flex-column align-items-center justify-content-center" style="width: 20%;">
+                        <div class="photo-upload-container" style="width: 80px; height: 100px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                            {% if student_profile.avatar %}
+                                <img src="{{ student_profile.avatar.url }}" alt="Student Photo" style="width: 100%; height: 100%; object-fit: cover;">
                             {% else %}
-                                0%
+                                <div class="text-muted text-center">
+                                    <i class="bi bi-camera" style="font-size: 1.5rem;"></i>
+                                    <br>
+                                    <small style="font-size: 0.7rem;">Photo</small>
+                                </div>
                             {% endif %}
-                        </h2>
+                        </div>
+                        <input type="file" id="photo-upload" accept="image/*" style="display: none;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-1" style="font-size: 0.7rem;" onclick="event.stopPropagation(); document.getElementById('photo-upload').click();">
+                            Change
+                        </button>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                    
+                    <!-- Information Section  -->
+                    <div class="d-flex flex-column justify-content-center" style="width: 80%; padding-left: 15px;">
+                        <!-- STUDENT ID Title -->
+                        <h4 class="mb-3" style="font-weight: bold; color: black; font-size: 1.2rem;">STUDENT ID</h4>
+                        
+                        <!-- First Line: NAME BIRTHDAY -->
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <span class="fw-bold" style="color: black; font-size: 0.9rem;">NAME:</span>
+                                <span style="font-size: 0.9rem;">{{ user.get_full_name|default:user.username }}</span>
+                            </div>
+                            <div>
+                                <span class="fw-bold" style="color: black; font-size: 0.9rem;">BIRTHDAY:</span>
+                                <span style="font-size: 0.9rem;">{{ student_profile.date_of_birth|default:"Not set" }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Dotted Line -->
+                        <hr class="my-2" style="border-top: 2px dotted #000;">
+                        
+                        <!-- Second Line: SCHOOL YEAR LEVEL -->
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <span class="fw-bold" style="color: black; font-size: 0.9rem;">SCHOOL:</span>
+                                <span style="font-size: 0.9rem;">{{ student_profile.school|default:"Not set" }}</span>
+                            </div>
+                            <div>
+                                <span class="fw-bold" style="color: black; font-size: 0.9rem;">YEAR LEVEL:</span>
+                                <span style="font-size: 0.9rem;">{{ student_profile.year_level|default:"Not set" }}</span>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right side content -->
+    <div class="col-md-6">
+        <div class="card" style="border: 2px solid black; background-color: white; height: 200px;">
+            <div class="card-body p-2">
+                <!-- Stats Row - Compact -->
+                <div class="d-flex justify-content-between mb-1" style="height: 60%;">
+                    <!-- Ongoing Todos -->
+                    <div class="text-center p-1" style="background-color: #FFE0EF; border-radius: 8px; flex: 1; margin: 0 1px;">
+                        <img src="{% static 'img/icons/ongoing.png' %}" alt="Ongoing" style="width: 20px; height: 20px;">
+                        <h5 class="my-1" style="color: #000;">{{ ongoing_todos }}</h5>
+                        <p class="mb-0 fw-bold" style="color: #000; font-size: 0.7rem;">Ongoing</p>
+                    </div>
+                    
+                    <!-- Missed Todos -->
+                    <div class="text-center p-1" style="background-color: #BFECFF; border-radius: 8px; flex: 1; margin: 0 1px;">
+                        <img src="{% static 'img/icons/missed.png' %}" alt="Missed" style="width: 20px; height: 20px;">
+                        <h5 class="my-1" style="color: #000;">{{ missed_todos }}</h5>
+                        <p class="mb-0 fw-bold" style="color: #000; font-size: 0.7rem;">Missed</p>
+                    </div>
+                    
+                    <!-- Completed Todos -->
+                    <div class="text-center p-1" style="background-color: #C1CFA1; border-radius: 8px; flex: 1; margin: 0 1px;">
+                        <img src="{% static 'img/icons/completed.png' %}" alt="Completed" style="width: 20px; height: 20px;">
+                        <h5 class="my-1" style="color: #000;">{{ completed_todos }}</h5>
+                        <p class="mb-0 fw-bold" style="color: #000; font-size: 0.7rem;">Completed</p>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="mt-1">
+                    <h6 class="fw-bold mb-1" style="color: #000; font-size: 0.8rem;">Overall Progress</h6>
+                    <div class="progress mb-1" style="height: 10px; background-color: #f0f0f0;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ progress_percentage }}%; background-color: #f0a04b; color: #000; font-weight: bold; font-size: 0.6rem;"
+                             aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ progress_percentage }}%
+                        </div>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.65rem;">{{ completed_todos }} of {{ total_todos }} todos completed</small>
                 </div>
             </div>
         </div>
@@ -88,63 +131,77 @@
 <!-- Todos Section -->
 <div class="row">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-list-task"></i> My Todos
-                </h5>
+                        <div class="card">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            My Todos
+                        </h5>
+                <div class="dropdown">
+                    <button class="btn btn-custom btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="{% static 'img/icons/todo.png' %}" alt="Filter" style="width: 16px; height: 16px; margin-right: 4px;">
+                        {% if current_filter == 'all' %}All Todos{% elif current_filter == 'ongoing' %}Ongoing{% elif current_filter == 'missed' %}Missed{% elif current_filter == 'completed' %}Completed{% else %}Filter{% endif %}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="?filter=all">
+                            <img src="{% static 'img/icons/todo.png' %}" alt="All" style="width: 16px; height: 16px; margin-right: 8px;">
+                            All Todos
+                        </a></li>
+                        <li><a class="dropdown-item" href="?filter=ongoing">
+                            <img src="{% static 'img/icons/ongoing.png' %}" alt="Ongoing" style="width: 16px; height: 16px; margin-right: 8px;">
+                            Ongoing
+                        </a></li>
+                        <li><a class="dropdown-item" href="?filter=missed">
+                            <img src="{% static 'img/icons/missed.png' %}" alt="Missed" style="width: 16px; height: 16px; margin-right: 8px;">
+                            Missed
+                        </a></li>
+                        <li><a class="dropdown-item" href="?filter=completed">
+                            <img src="{% static 'img/icons/completed.png' %}" alt="Completed" style="width: 16px; height: 16px; margin-right: 8px;">
+                            Completed
+                        </a></li>
+                    </ul>
+                </div>
             </div>
             <div class="card-body">
                 {% if todos %}
                     <div class="list-group">
                         {% for todo in todos %}
-                            <div class="list-group-item todo-item {% if todo.completed %}completed{% endif %}">
+                            <div class="list-group-item todo-item {% if todo.completed %}completed{% endif %} {% if todo.is_missed %}missed{% endif %}" style="border: 2px solid {% if todo.is_missed %}#dc3545{% else %}black{% endif %}; background-color: #FBF3D5; margin-bottom: 8px; border-radius: 8px; min-height: 50px; cursor: pointer;" onclick="openTodoDialog({{ todo.id }}, '{{ todo.title|escapejs }}', '{{ todo.description|escapejs }}', '{{ todo.due_date|date:"Y-m-d"|default:"" }}')">
                                 <div class="d-flex w-100 justify-content-between align-items-center">
-                                    <div class="form-check">
-                                        <input class="form-check-input todo-toggle" type="checkbox" 
-                                               data-todo-id="{{ todo.id }}"
-                                               {% if todo.completed %}checked{% endif %}>
-                                        <label class="form-check-label todo-title">
-                                            {{ todo.title }}
-                                        </label>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        {% if todo.priority == 'high' %}
-                                            <span class="badge bg-danger me-2">High</span>
-                                        {% elif todo.priority == 'medium' %}
-                                            <span class="badge bg-warning me-2">Medium</span>
-                                        {% else %}
-                                            <span class="badge bg-success me-2">Low</span>
-                                        {% endif %}
+                                    <div class="d-flex align-items-center flex-grow-1">
+                                        <!-- Pin Icon - Compact -->
+                                        <img src="{% static 'img/icons/pin.png' %}" alt="Pin" style="width: 35px; height: 35px; margin-right: 12px;">
                                         
-                                        {% if todo.due_date %}
-                                            <small class="text-muted me-2">
-                                                Due: {{ todo.due_date|date:"M d, Y" }}
-                                            </small>
-                                        {% endif %}
-                                        
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'dashboard:edit_todo' todo.id %}" 
-                                               class="btn btn-outline-primary">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <a href="{% url 'dashboard:delete_todo' todo.id %}" 
-                                               class="btn btn-outline-danger"
-                                               onclick="return confirm('Are you sure you want to delete this todo?')">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
+                                        <!-- Todo Content -->
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center">
+                                                <h6 class="mb-0 fw-bold me-3" style="color: #000; font-size: 1rem;">{{ todo.title }}</h6>
+                                                {% if todo.due_date %}
+                                                    <small class="text-muted" style="white-space: nowrap; font-size: 0.8rem;">
+                                                        <i class="bi bi-calendar3"></i> {{ todo.due_date|date:"M d, Y" }}
+                                                    </small>
+                                                {% endif %}
+                                            </div>
+                                            {% if todo.description %}
+                                                <p class="mb-0 text-muted" style="font-size: 0.85rem; margin-top: 2px;">{{ todo.description|truncatechars:80 }}</p>
+                                            {% endif %}
                                         </div>
                                     </div>
+                                    
+                                    <!-- Checkbox -->
+                                    <div class="ms-3">
+                                        <input class="form-check-input todo-toggle" type="checkbox" 
+                                               data-todo-id="{{ todo.id }}"
+                                               style="width: 20px; height: 20px; cursor: pointer;"
+                                               {% if todo.completed %}checked{% endif %}
+                                               onclick="event.stopPropagation();">
+                                    </div>
                                 </div>
-                                {% if todo.description %}
-                                    <p class="mb-1 text-muted">{{ todo.description }}</p>
-                                {% endif %}
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
                     <div class="text-center py-4">
-                        <i class="bi bi-list-task text-muted" style="font-size: 3rem;"></i>
+                        <img src="{% static 'img/icons/todo.png' %}" alt="Todo" style="width: 60px; height: 60px; opacity: 0.6;">
                         <h5 class="text-muted mt-3">No todos yet</h5>
                         <p class="text-muted">Start by adding your first todo!</p>
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTodoModal">
@@ -176,28 +233,391 @@
                         <label for="id_description" class="form-label">Description</label>
                         <textarea class="form-control" id="id_description" name="description" rows="3"></textarea>
                     </div>
+                    <div class="mb-3">
+                        <label for="id_due_date" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="id_due_date" name="due_date">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Todo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Todo Action Dialog -->
+<div class="modal fade" id="todoActionModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Todo Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" onclick="editTodo()">
+                        <i class="bi bi-pencil"></i> Edit Todo
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="deleteTodo()">
+                        <i class="bi bi-trash"></i> Delete Todo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Todo Modal -->
+<div class="modal fade" id="editTodoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Todo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="" id="editTodoForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="edit_title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_due_date" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="edit_due_date" name="due_date">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Todo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.todo-item.completed {
+    opacity: 0.7;
+    background-color: #e8e8e8 !important;
+}
+
+.todo-item.completed h6 {
+    text-decoration: line-through;
+    color: #666 !important;
+}
+
+.todo-item.completed p {
+    text-decoration: line-through;
+    color: #999 !important;
+}
+
+.todo-item.missed {
+    background-color: #fff5f5 !important;
+}
+
+.todo-item.missed h6 {
+    color: #dc3545 !important;
+}
+
+.todo-item.missed small {
+    color: #dc3545 !important;
+}
+
+.todo-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.form-check-input:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.btn-custom {
+    background-color: #FBF3D5;
+    border: 2px solid #000000;
+    color: #000000;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-custom:hover {
+    background-color: #F0E6C7;
+    border-color: #000000;
+    color: #000000;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-custom:focus {
+    background-color: #FBF3D5;
+    border-color: #000000;
+    color: #000000;
+    box-shadow: 0 0 0 0.2rem rgba(0,0,0,0.25);
+}
+
+.card-header-custom {
+    background-color: #FBF3D5;
+    border: 2px solid #000000;
+    color: #000000;
+    font-weight: 500;
+    padding: 1rem;
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.card-body {
+    background-color: transparent;
+    border: none;
+}
+
+.card {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+</style>
+
+<script>
+// Global variable to store current todo ID
+let currentTodoId = null;
+
+// Function to open todo action dialog
+function openTodoDialog(todoId, title, description, dueDate) {
+    currentTodoId = todoId;
+    
+    // Store todo data for editing
+    window.todoData = {
+        id: todoId,
+        title: title,
+        description: description,
+        dueDate: dueDate
+    };
+    
+    // Show the action dialog
+    const actionModal = new bootstrap.Modal(document.getElementById('todoActionModal'));
+    actionModal.show();
+}
+
+// Function to edit todo
+function editTodo() {
+    // Close action dialog
+    const actionModal = bootstrap.Modal.getInstance(document.getElementById('todoActionModal'));
+    actionModal.hide();
+    
+    // Populate edit form
+    document.getElementById('edit_title').value = window.todoData.title;
+    document.getElementById('edit_description').value = window.todoData.description;
+    document.getElementById('edit_due_date').value = window.todoData.dueDate;
+    
+    // Set form action
+    document.getElementById('editTodoForm').action = `/dashboard/todo/${currentTodoId}/edit/`;
+    
+    // Show edit modal
+    const editModal = new bootstrap.Modal(document.getElementById('editTodoModal'));
+    editModal.show();
+}
+
+// Function to delete todo
+function deleteTodo() {
+    if (confirm('Are you sure you want to delete this todo?')) {
+        // Close action dialog
+        const actionModal = bootstrap.Modal.getInstance(document.getElementById('todoActionModal'));
+        actionModal.hide();
+        
+        // Redirect to delete URL
+        window.location.href = `/dashboard/todo/${currentTodoId}/delete/`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up checkbox handlers');
+    
+    // Handle todo checkbox toggles
+    const todoCheckboxes = document.querySelectorAll('.todo-toggle');
+    console.log('Found', todoCheckboxes.length, 'checkboxes');
+    
+    todoCheckboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            console.log('Checkbox changed:', this.checked);
+            
+            const todoId = this.getAttribute('data-todo-id');
+            const isChecked = this.checked;
+            const todoItem = this.closest('.todo-item');
+            
+            console.log('Todo ID:', todoId, 'Checked:', isChecked);
+            
+            // Get CSRF token from the form
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            console.log('CSRF Token:', csrfToken ? 'Found' : 'Not found');
+            
+            // Optimistic UI update
+            if (isChecked) {
+                todoItem.classList.add('completed');
+            } else {
+                todoItem.classList.remove('completed');
+            }
+            
+            const url = `/dashboard/todo/${todoId}/toggle/`;
+            console.log('Making request to:', url);
+            
+            // Make the AJAX request
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                // Update UI based on server response
+                if (data.completed) {
+                    todoItem.classList.add('completed');
+                } else {
+                    todoItem.classList.remove('completed');
+                }
+                // Reload page to update statistics
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert checkbox state and UI on error
+                this.checked = !isChecked;
+                if (isChecked) {
+                    todoItem.classList.remove('completed');
+                } else {
+                    todoItem.classList.add('completed');
+                }
+            });
+        });
+    });
+});
+
+// Profile modal functions
+function openProfileModal() {
+    const modal = new bootstrap.Modal(document.getElementById('profileModal'));
+    modal.show();
+}
+
+// Handle profile photo preview
+document.addEventListener('DOMContentLoaded', function() {
+    const photoInput = document.getElementById('profile-photo-input');
+    if (photoInput) {
+        photoInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('profile-photo-preview');
+                    const placeholder = document.getElementById('profile-photo-placeholder');
+                    
+                    if (preview) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                    if (placeholder) {
+                        placeholder.style.display = 'none';
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
+
+<!-- Profile Edit Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Student Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'accounts:edit_profile' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6">
+                        <!-- Photo Upload Section -->
+                        <div class="col-md-4 text-center">
                             <div class="mb-3">
-                                <label for="id_due_date" class="form-label">Due Date</label>
-                                <input type="date" class="form-control" id="id_due_date" name="due_date">
+                                <div class="profile-photo-container" style="width: 150px; height: 150px; border: 2px dashed #ccc; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; overflow: hidden;">
+                                    {% if student_profile.avatar %}
+                                        <img id="profile-photo-preview" src="{{ student_profile.avatar.url }}" alt="Profile Photo" style="width: 100%; height: 100%; object-fit: cover;">
+                                    {% else %}
+                                        <div id="profile-photo-placeholder" class="text-muted">
+                                            <i class="bi bi-camera" style="font-size: 3rem;"></i>
+                                            <br>
+                                            <small>Upload Photo</small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <input type="file" id="profile-photo-input" name="avatar" accept="image/*" style="display: none;">
+                                <button type="button" class="btn btn-outline-primary mt-2" onclick="document.getElementById('profile-photo-input').click();">
+                                    <i class="bi bi-upload"></i> Upload Photo
+                                </button>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        
+                        <!-- Profile Information -->
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="id_first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="id_first_name" name="first_name" value="{{ user.first_name }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="id_last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="id_last_name" name="last_name" value="{{ user.last_name }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="mb-3">
-                                <label for="id_priority" class="form-label">Priority</label>
-                                <select class="form-select" id="id_priority" name="priority">
-                                    <option value="low">Low</option>
-                                    <option value="medium" selected>Medium</option>
-                                    <option value="high">High</option>
-                                </select>
+                                <label for="id_date_of_birth" class="form-label">Birthday</label>
+                                <input type="date" class="form-control" id="id_date_of_birth" name="date_of_birth" value="{{ student_profile.date_of_birth|date:'Y-m-d' }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_school" class="form-label">School</label>
+                                <input type="text" class="form-control" id="id_school" name="school" value="{{ student_profile.school }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_year_level" class="form-label">Year Level</label>
+                                <input type="text" class="form-control" id="id_year_level" name="year_level" value="{{ student_profile.year_level }}" placeholder="e.g., Grade 10, Year 11, etc.">
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Todo</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
         </div>

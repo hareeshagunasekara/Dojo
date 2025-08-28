@@ -2,19 +2,78 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+from datetime import date, datetime
 from .models import Todo
 from .forms import TodoForm
+from apps.accounts.models import StudentProfile
 
 @login_required
 def home(request):
+    # Get or create StudentProfile
+    student_profile, created = StudentProfile.objects.get_or_create(user=request.user)
+    
     todos = Todo.objects.filter(user=request.user)
     form = TodoForm()
+    
+    # Get filter parameter
+    filter_type = request.GET.get('filter', 'all')
+    today = date.today()
+    
+    # Apply filters based on selection
+    if filter_type == 'ongoing':
+        # Ongoing: not completed and due date is today or in the future
+        todos = todos.filter(
+            completed=False,
+            due_date__gte=today
+        )
+    elif filter_type == 'missed':
+        # Missed: not completed and due date is in the past
+        todos = todos.filter(
+            completed=False,
+            due_date__lt=today
+        )
+    elif filter_type == 'completed':
+        # Completed: marked as completed
+        todos = todos.filter(completed=True)
+    # 'all' shows all todos (no additional filter)
+    
+    # Add is_missed property to each todo for template styling
+    for todo in todos:
+        todo.is_missed = not todo.completed and todo.due_date and todo.due_date < today
+    
+    # Calculate todo statistics for all todos (not filtered)
+    all_todos = Todo.objects.filter(user=request.user)
+    completed_todos = all_todos.filter(completed=True).count()
+    total_todos = all_todos.count()
+    
+    # Calculate ongoing todos (not completed and due date is today or in the future)
+    ongoing_todos = all_todos.filter(
+        completed=False,
+        due_date__gte=today
+    ).count()
+    
+    # Calculate missed todos (not completed and due date is in the past)
+    missed_todos = all_todos.filter(
+        completed=False,
+        due_date__lt=today
+    ).count()
+    
+    # Calculate progress percentage
+    progress_percentage = 0
+    if total_todos > 0:
+        progress_percentage = int((completed_todos / total_todos) * 100)
     
     context = {
         'todos': todos,
         'form': form,
-        'completed_todos': todos.filter(completed=True).count(),
-        'total_todos': todos.count(),
+        'completed_todos': completed_todos,
+        'ongoing_todos': ongoing_todos,
+        'missed_todos': missed_todos,
+        'total_todos': total_todos,
+        'progress_percentage': progress_percentage,
+        'today': today,
+        'current_filter': filter_type,
+        'student_profile': student_profile,
     }
     return render(request, 'dashboard/home.html', context)
 
@@ -58,7 +117,9 @@ def edit_todo(request, todo_id):
             form.save()
             messages.success(request, 'Todo updated successfully!')
             return redirect('dashboard:home')
-    else:
-        form = TodoForm(instance=todo)
+        else:
+            # If form is invalid, return to the same page with errors
+            return redirect('dashboard:home')
     
-    return render(request, 'dashboard/edit_todo.html', {'form': form, 'todo': todo})
+    # GET request - redirect to home since we handle editing via modal
+    return redirect('dashboard:home')
