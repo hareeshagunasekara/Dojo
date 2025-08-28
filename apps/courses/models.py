@@ -2,29 +2,27 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Course(models.Model):
-    SEMESTER_CHOICES = [
-        ('fall', 'Fall'),
-        ('spring', 'Spring'),
-        ('summer', 'Summer'),
-        ('winter', 'Winter'),
+    COLOR_CHOICES = [
+        ('#B7B1F2', 'Primary Purple'),
+        ('#BFECFF', 'Secondary Blue'),
+        ('#FFE0EF', 'Accent Pink'),
+        ('#C1CFA1', 'Success Green'),
+        ('#F0A04B', 'Warning Orange'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
-    code = models.CharField(max_length=20)
-    description = models.TextField(blank=True)
     instructor = models.CharField(max_length=100, blank=True)
-    semester = models.CharField(max_length=10, choices=SEMESTER_CHOICES)
-    year = models.IntegerField()
+    room_location = models.CharField(max_length=100, blank=True)
+    folder_color = models.CharField(max_length=7, choices=COLOR_CHOICES, default='#B7B1F2')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ['user', 'code', 'semester', 'year']
-        ordering = ['-year', 'semester', 'name']
+        ordering = ['-created_at', 'name']
     
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return self.name
 
 class CourseFile(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='files')

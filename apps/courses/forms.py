@@ -4,9 +4,9 @@ from .models import Course, CourseFile, CourseLink, CourseTodo
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
-        fields = ['name', 'code', 'description', 'instructor', 'semester', 'year']
+        fields = ['name', 'instructor', 'room_location', 'folder_color']
         widgets = {
-            'semester': forms.Select(choices=Course.SEMESTER_CHOICES),
+            'folder_color': forms.HiddenInput(),
         }
 
 class CourseFileForm(forms.ModelForm):
