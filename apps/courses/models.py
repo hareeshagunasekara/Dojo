@@ -15,6 +15,7 @@ class Course(models.Model):
     instructor = models.CharField(max_length=100, blank=True)
     room_location = models.CharField(max_length=100, blank=True)
     folder_color = models.CharField(max_length=7, choices=COLOR_CHOICES, default='#B7B1F2')
+    image = models.ImageField(upload_to='course_images/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

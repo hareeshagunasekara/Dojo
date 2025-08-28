@@ -4,7 +4,7 @@ from .models import Course, CourseFile, CourseLink, CourseTodo
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
-        fields = ['name', 'instructor', 'room_location', 'folder_color']
+        fields = ['name', 'instructor', 'room_location', 'folder_color', 'image']
         widgets = {
             'folder_color': forms.HiddenInput(),
         }
