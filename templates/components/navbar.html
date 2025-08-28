@@ -2,7 +2,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #FBF3D5;">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="{% if user.is_authenticated %}{% url 'dashboard:home' %}{% else %}{% url 'welcome' %}{% endif %}">
-            <img src="{% static 'img/logos/logo.png' %}" alt="Dojo Logo" style="width: 50px; height: 50px; margin-right: 8px;">
+            <img src="{% static 'img/logos/logo.png' %}" alt="Dojo Logo" style="width: 60px; height: 60px; margin-right: 8px;">
         </a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -13,31 +13,31 @@
             {% if user.is_authenticated %}
                 <ul class="navbar-nav mx-auto flex-fill justify-content-around">
                     <li class="nav-item text-center">
-                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'dashboard:home' %}">
+                        <a class="nav-link d-flex flex-column align-items-center {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard:home' %}">
                             <img src="{% static 'img/icons/home.png' %}" alt="Home" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
                             <span class="navbar-title">Home</span>
                         </a>
                     </li>
                     <li class="nav-item text-center">
-                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'courses:course_list' %}">
+                        <a class="nav-link d-flex flex-column align-items-center {% if request.resolver_match.app_name == 'courses' %}active{% endif %}" href="{% url 'courses:course_list' %}">
                             <img src="{% static 'img/icons/courses.png' %}" alt="Courses" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
                             <span class="navbar-title">Courses</span>
                         </a>
                     </li>
                     <li class="nav-item text-center">
-                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'calendarapp:calendar_view' %}">
+                        <a class="nav-link d-flex flex-column align-items-center {% if request.resolver_match.app_name == 'calendarapp' %}active{% endif %}" href="{% url 'calendarapp:calendar_view' %}">
                             <img src="{% static 'img/icons/calendar.png' %}" alt="Calendar" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
                             <span class="navbar-title">Calendar</span>
                         </a>
                     </li>
                     <li class="nav-item text-center">
-                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'schedule:schedule_view' %}">
+                        <a class="nav-link d-flex flex-column align-items-center {% if request.resolver_match.app_name == 'schedule' %}active{% endif %}" href="{% url 'schedule:schedule_view' %}">
                             <img src="{% static 'img/icons/schedule.png' %}" alt="Schedule" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
                             <span class="navbar-title">Schedule</span>
                         </a>
                     </li>
                     <li class="nav-item text-center">
-                        <a class="nav-link d-flex flex-column align-items-center" href="{% url 'settingsapp:settings_view' %}">
+                        <a class="nav-link d-flex flex-column align-items-center {% if request.resolver_match.app_name == 'settingsapp' %}active{% endif %}" href="{% url 'settingsapp:settings_view' %}">
                             <img src="{% static 'img/icons/settings.png' %}" alt="Settings" class="navbar-icon mb-1" style="width: 24px; height: 24px;">
                             <span class="navbar-title">Settings</span>
                         </a>
@@ -116,6 +116,18 @@
 
 .navbar-nav .nav-link.active {
     color: rgba(0, 0, 0, 0.9) !important;
+    transform: scale(1.15);
+    background: linear-gradient(135deg, rgba(183, 177, 242, 0.1), rgba(193, 207, 161, 0.1));
+    border-radius: 12px;
+}
+
+.navbar-nav .nav-link.active .navbar-icon {
+    transform: scale(1.2);
+}
+
+.navbar-nav .nav-link.active .navbar-title {
+    font-weight: bold;
+    color: #000;
 }
 
 .navbar-icon {
