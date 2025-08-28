@@ -1,0 +1,543 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Schedule - Dojo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-form-container {
+        background: #FBF3D5;
+        border-radius: 15px;
+        padding: 15px;
+        margin: 15px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px 15px;
+        background: #FBF3D5;
+        border-radius: 10px;
+    }
+    
+    .form-title {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #000;
+        margin: 0;
+    }
+    
+    .today-date {
+        font-size: 0.8rem;
+        color: #666;
+        font-style: italic;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 2px dashed #B7B1F2;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #000;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 12px;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .form-label {
+        font-weight: bold;
+        color: #000;
+        font-size: 0.85rem;
+    }
+    
+    .form-control, .form-select {
+        padding: 6px 10px;
+        border: 2px solid #B7B1F2;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #C1CFA1;
+        box-shadow: 0 0 0 0.2rem rgba(193, 207, 161, 0.25);
+        outline: none;
+    }
+    
+    .color-options {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .color-option {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        padding: 6px 10px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .color-option:hover {
+        border-color: #B7B1F2;
+        background: rgba(183, 177, 242, 0.1);
+    }
+    
+    .color-option input[type="radio"] {
+        display: none;
+    }
+    
+    .color-option input[type="radio"]:checked + .color-option-content {
+        border-color: #000;
+        background: rgba(183, 177, 242, 0.2);
+    }
+    
+    .color-option-content {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 6px;
+        border: 2px solid transparent;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+    
+    .color-swatch {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 2px solid #000;
+    }
+    
+    .slots-section {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 2px dashed #C1CFA1;
+    }
+    
+    .slot-item {
+        background: #FBF3D5;
+        border: 2px solid #B7B1F2;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .slot-item:hover {
+        border-color: #C1CFA1;
+        box-shadow: 0 4px 8px rgba(183, 177, 242, 0.2);
+    }
+    
+    .slot-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #B7B1F2;
+    }
+    
+    .slot-number {
+        font-weight: bold;
+        color: #000;
+        font-size: 0.9rem;
+    }
+    
+    .remove-slot-btn {
+        background: #ff6b6b;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .remove-slot-btn:hover {
+        background: #ff5252;
+        transform: translateY(-1px);
+    }
+    
+    .days-selection {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .day-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border: 2px solid #B7B1F2;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    
+    .day-checkbox:hover {
+        background: rgba(183, 177, 242, 0.1);
+    }
+    
+    .day-checkbox input[type="checkbox"] {
+        display: none;
+    }
+    
+    .day-checkbox input[type="checkbox"]:checked + span {
+        background: #B7B1F2;
+        color: #000;
+    }
+    
+    .time-selection {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: end;
+    }
+    
+    .timezone-info {
+        font-size: 0.75rem;
+        color: #666;
+        font-style: italic;
+        margin-top: 4px;
+    }
+    
+    .add-slot-btn {
+        background: #C1CFA1;
+        border: 2px solid #000;
+        color: #000;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-top: 12px;
+    }
+    
+    .add-slot-btn:hover {
+        background: #B7B1F2;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 15px;
+    }
+    
+    .cancel-btn, .save-btn {
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border: 2px solid #000;
+    }
+    
+    .cancel-btn {
+        background: #F0A04B;
+        color: #000;
+    }
+    
+    .cancel-btn:hover {
+        background: #FFE0EF;
+        transform: translateY(-2px);
+    }
+    
+    .save-btn {
+        background: linear-gradient(135deg, #B7B1F2, #C1CFA1);
+        color: #000;
+    }
+    
+    .save-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(183, 177, 242, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="schedule-form-container">
+    <div class="form-header">
+        <div>
+            <h1 class="form-title">Edit Schedule: {{ schedule.title }}</h1>
+            <p class="today-date">Today: {{ today|date:"l, M j, Y" }}</p>
+        </div>
+    </div>
+    
+    <form method="POST">
+        {% csrf_token %}
+        
+        <!-- Basic Details Section -->
+        <div class="form-section">
+            <h2 class="section-title">
+                <i class="bi bi-info-circle"></i> BASIC DETAILS
+            </h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    {{ schedule_form.title }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Instructor</label>
+                    {{ schedule_form.instructor }}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Room Location</label>
+                    {{ schedule_form.room_location }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Related Course</label>
+                    {{ schedule_form.course }}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Color</label>
+                <div class="color-options">
+                    {% for value, label in schedule_form.fields.color.choices %}
+                    <label class="color-option">
+                        <input type="radio" name="{{ schedule_form.color.name }}" value="{{ value }}" {% if schedule_form.color.value == value %}checked{% endif %}>
+                        <div class="color-option-content">
+                            <div class="color-swatch" style="background-color: {{ value }};"></div>
+                            <span>{{ label }}</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Schedules Section -->
+        <div class="slots-section">
+            <h2 class="section-title">
+                <i class="bi bi-calendar-week"></i> SCHEDULES
+            </h2>
+            
+            {{ slot_formset.management_form }}
+            
+            <div id="slots-container">
+                {% for slot_form in slot_formset %}
+                <div class="slot-item" data-slot-index="{{ forloop.counter0 }}">
+                    <div class="slot-header">
+                        <span class="slot-number">Schedule {{ forloop.counter }}</span>
+                        {% if not forloop.first %}
+                        <button type="button" class="remove-slot-btn" onclick="removeSlot(this)">
+                            <i class="bi bi-trash"></i> Remove Schedule {{ forloop.counter }}
+                        </button>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="days-selection">
+                        <label class="day-checkbox">
+                            <input type="checkbox" name="days_monday_{{ forloop.counter0 }}" value="monday" {% if slot_form.instance.day_of_week == 'monday' %}checked{% endif %}>
+                            <span>M</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" name="days_tuesday_{{ forloop.counter0 }}" value="tuesday" {% if slot_form.instance.day_of_week == 'tuesday' %}checked{% endif %}>
+                            <span>T</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" name="days_wednesday_{{ forloop.counter0 }}" value="wednesday" {% if slot_form.instance.day_of_week == 'wednesday' %}checked{% endif %}>
+                            <span>W</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" name="days_thursday_{{ forloop.counter0 }}" value="thursday" {% if slot_form.instance.day_of_week == 'thursday' %}checked{% endif %}>
+                            <span>Th</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" name="days_friday_{{ forloop.counter0 }}" value="friday" {% if slot_form.instance.day_of_week == 'friday' %}checked{% endif %}>
+                            <span>F</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" name="days_saturday_{{ forloop.counter0 }}" value="saturday" {% if slot_form.instance.day_of_week == 'saturday' %}checked{% endif %}>
+                            <span>Sa</span>
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" name="days_sunday_{{ forloop.counter0 }}" value="sunday" {% if slot_form.instance.day_of_week == 'sunday' %}checked{% endif %}>
+                            <span>Su</span>
+                        </label>
+                    </div>
+                    
+                    <div class="time-selection">
+                        <div class="form-group">
+                            <label class="form-label">Start Time</label>
+                            {{ slot_form.start_time }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">End Time</label>
+                            {{ slot_form.end_time }}
+                        </div>
+                    </div>
+                    
+                    <div class="timezone-info">(Asia/Colombo)</div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <button type="button" class="add-slot-btn" onclick="addSlot()">
+                <i class="bi bi-plus-circle"></i> + Add Schedule
+            </button>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{% url 'schedule:schedule_view' %}" class="btn cancel-btn">
+                <i class="bi bi-x-circle"></i> Cancel
+            </a>
+            <button type="submit" class="btn save-btn">
+                <i class="bi bi-check-circle"></i> Update Schedule
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let slotIndex = {{ slot_formset.forms|length }};
+
+function addSlot() {
+    const container = document.getElementById('slots-container');
+    const newSlot = document.createElement('div');
+    newSlot.className = 'slot-item';
+    newSlot.setAttribute('data-slot-index', slotIndex);
+    
+    newSlot.innerHTML = `
+        <div class="slot-header">
+            <span class="slot-number">Schedule ${slotIndex + 1}</span>
+            <button type="button" class="remove-slot-btn" onclick="removeSlot(this)">
+                <i class="bi bi-trash"></i> Remove Schedule ${slotIndex + 1}
+            </button>
+        </div>
+        
+        <div class="days-selection">
+            <label class="day-checkbox">
+                <input type="checkbox" name="days_monday_${slotIndex}" value="monday">
+                <span>M</span>
+            </label>
+            <label class="day-checkbox">
+                <input type="checkbox" name="days_tuesday_${slotIndex}" value="tuesday">
+                <span>T</span>
+            </label>
+            <label class="day-checkbox">
+                <input type="checkbox" name="days_wednesday_${slotIndex}" value="wednesday">
+                <span>W</span>
+            </label>
+            <label class="day-checkbox">
+                <input type="checkbox" name="days_thursday_${slotIndex}" value="thursday">
+                <span>Th</span>
+            </label>
+            <label class="day-checkbox">
+                <input type="checkbox" name="days_friday_${slotIndex}" value="friday">
+                <span>F</span>
+            </label>
+            <label class="day-checkbox">
+                <input type="checkbox" name="days_saturday_${slotIndex}" value="saturday">
+                <span>Sa</span>
+            </label>
+            <label class="day-checkbox">
+                <input type="checkbox" name="days_sunday_${slotIndex}" value="sunday">
+                <span>Su</span>
+            </label>
+        </div>
+        
+        <div class="time-selection">
+            <div class="form-group">
+                <label class="form-label">Start Time</label>
+                <input type="time" class="form-control" name="slots-${slotIndex}-start_time">
+            </div>
+            <div class="form-group">
+                <label class="form-label">End Time</label>
+                <input type="time" class="form-control" name="slots-${slotIndex}-end_time">
+            </div>
+        </div>
+        
+        <div class="timezone-info">(Asia/Colombo)</div>
+    `;
+    
+    container.appendChild(newSlot);
+    slotIndex++;
+    
+    // Update management form
+    const totalForms = document.getElementById('id_slots-TOTAL_FORMS');
+    totalForms.value = slotIndex;
+}
+
+function removeSlot(button) {
+    const slotItem = button.closest('.slot-item');
+    slotItem.remove();
+    
+    // Update slot numbers
+    document.querySelectorAll('.slot-item').forEach((item, index) => {
+        const slotNumber = item.querySelector('.slot-number');
+        const removeBtn = item.querySelector('.remove-slot-btn');
+        
+        slotNumber.textContent = `Schedule ${index + 1}`;
+        if (removeBtn) {
+            removeBtn.innerHTML = `<i class="bi bi-trash"></i> Remove Schedule ${index + 1}`;
+        }
+    });
+    
+    slotIndex--;
+    
+    // Update management form
+    const totalForms = document.getElementById('id_slots-TOTAL_FORMS');
+    totalForms.value = slotIndex;
+}
+
+// Day checkbox functionality
+document.addEventListener('change', function(e) {
+    if (e.target.type === 'checkbox' && e.target.name.startsWith('days_')) {
+        const checkbox = e.target;
+        const span = checkbox.nextElementSibling;
+        
+        if (checkbox.checked) {
+            span.style.background = '#B7B1F2';
+            span.style.color = '#000';
+        } else {
+            span.style.background = 'transparent';
+            span.style.color = '#000';
+        }
+    }
+});
+</script>
+{% endblock %}

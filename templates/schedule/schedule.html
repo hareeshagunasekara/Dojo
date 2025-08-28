@@ -1,0 +1,527 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load schedule_extras %}
+
+{% block title %}Class Schedule - Dojo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-container {
+        background: #FBF3D5;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .schedule-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        background: #FBF3D5;
+        border-radius: 10px;
+    }
+    
+    .schedule-title {
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #000;
+        margin: 0;
+    }
+    
+    .today-date {
+        font-size: 0.8rem;
+        color: #666;
+        font-style: italic;
+        margin: 0;
+    }
+    
+    .add-schedule-btn {
+        background: #FBF3D5;
+        border: 2px solid #000;
+        color: #000;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    
+    .add-schedule-btn:hover {
+        background: #c1cfa1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .timetable {
+        background: #f3efde;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 2px dashed #B7B1F2;
+    }
+    
+    .timetable-header {
+        display: grid;
+        grid-template-columns: 60px repeat(7, 1fr);
+        background: linear-gradient(135deg, #B7B1F2, #c1cfa1);
+        border-bottom: 3px dashed #000;
+        position: relative;
+    }
+    
+    .timetable-header::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: repeating-linear-gradient(
+            to right,
+            transparent,
+            transparent 10px,
+            #000 10px,
+            #000 20px
+        );
+    }
+    
+    .day-header {
+        padding: 15px 10px;
+        text-align: center;
+        font-weight: bold;
+        color: #000;
+        border-right: 2px dashed rgba(183, 177, 242, 0.5);
+        position: relative;
+    }
+    
+    .day-header:last-child {
+        border-right: none;
+    }
+    
+    .day-header.today {
+        background: linear-gradient(135deg, #f0a04b, #ffe0ef);
+        color: #000;
+        font-weight: bold;
+    }
+    
+    .timetable-body {
+        display: grid;
+        grid-template-columns: 60px repeat(7, 1fr);
+        min-height: 600px;
+        max-height: 600px;
+        overflow-y: auto;
+        background-image: 
+            repeating-linear-gradient(
+                to bottom,
+                transparent,
+                transparent 50px,
+                rgba(183, 177, 242, 0.1) 50px,
+                rgba(183, 177, 242, 0.1) 52px
+            );
+        position: relative;
+    }
+    
+    .time-markers {
+        grid-column: 1;
+        background: rgba(183, 177, 242, 0.05);
+        border-right: 2px dashed rgba(183, 177, 242, 0.3);
+        position: relative;
+    }
+    
+    .time-marker {
+        position: absolute;
+        left: 5px;
+        font-size: 0.7rem;
+        color: #666;
+        font-weight: bold;
+    }
+    
+    .day-column {
+        border-right: 2px dashed rgba(183, 177, 242, 0.5);
+        padding: 10px;
+        min-height: 1200px;
+        position: relative;
+    }
+    
+    .day-column:last-child {
+        border-right: none;
+    }
+    
+    .day-column.today {
+        background: rgba(240, 160, 75, 0.1);
+        border: 2px dashed #f0a04b;
+        border-radius: 8px;
+    }
+    
+    .day-column::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 1px;
+        background: repeating-linear-gradient(
+            to bottom,
+            transparent,
+            transparent 8px,
+            rgba(183, 177, 242, 0.3) 8px,
+            rgba(183, 177, 242, 0.3) 16px
+        );
+    }
+    
+    .schedule-slot {
+        background:transparent;
+        border: 2px solid;
+        border-radius: 8px;
+        padding: 6px 8px;
+        margin-bottom: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        width: calc(100% - 16px);
+        z-index: 2;
+        min-height: 40px;
+    }
+    
+    /* Custom scrollbar styling */
+    .timetable-body::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .timetable-body::-webkit-scrollbar-track {
+        background: rgba(183, 177, 242, 0.1);
+        border-radius: 4px;
+    }
+    
+    .timetable-body::-webkit-scrollbar-thumb {
+        background: #B7B1F2;
+        border-radius: 4px;
+    }
+    
+    .timetable-body::-webkit-scrollbar-thumb:hover {
+        background: #c1cfa1;
+    }
+    
+    .schedule-slot:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .slot-title {
+        font-weight: bold;
+        margin-bottom: 2px;
+        font-size: 0.8rem;
+        color: #000;
+    }
+    
+    .slot-time {
+        font-size: 0.7rem;
+        color: #666;
+        margin-bottom: 2px;
+        font-weight: 500;
+    }
+    
+    .slot-instructor {
+        font-size: 0.65rem;
+        color: #888;
+        margin-bottom: 1px;
+    }
+    
+    .slot-room {
+        font-size: 0.65rem;
+        color: #888;
+        font-style: italic;
+    }
+    
+    .empty-day {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ccc;
+        font-style: italic;
+        font-size: 0.9rem;
+        text-align: center;
+        z-index: 1;
+    }
+    
+    .schedule-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 4px;
+        justify-content: flex-end;
+    }
+    
+    .edit-btn, .delete-btn {
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 0.6rem;
+        font-weight: bold;
+        border: 1px solid #000;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+    
+    .edit-btn {
+        background: #BFECFF;
+        color: #000;
+    }
+    
+    .edit-btn:hover {
+        background: #B7B1F2;
+        transform: scale(1.05);
+    }
+    
+    .delete-btn {
+        background: #ff6b6b;
+        color: white;
+    }
+    
+    .delete-btn:hover {
+        background: #ff5252;
+        transform: scale(1.05);
+    }
+    
+    /* Delete Modal Styles */
+    .delete-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        backdrop-filter: blur(5px);
+    }
+    
+    .delete-modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #FBF3D5;
+        border: 2px solid #B7B1F2;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .delete-modal-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #000;
+        margin-bottom: 15px;
+    }
+    
+    .delete-modal-message {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 20px;
+        line-height: 1.4;
+    }
+    
+    .delete-modal-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    
+    .delete-modal-btn {
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: bold;
+        border: 2px solid #000;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .delete-modal-cancel {
+        background: #BFECFF;
+        color: #000;
+    }
+    
+    .delete-modal-cancel:hover {
+        background: #B7B1F2;
+        transform: translateY(-2px);
+    }
+    
+    .delete-modal-confirm {
+        background: #ff6b6b;
+        color: white;
+    }
+    
+    .delete-modal-confirm:hover {
+        background: #ff5252;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="schedule-container">
+    <div class="schedule-header">
+        <div>
+            <h1 class="schedule-title">
+                <i class="bi bi-calendar-week"></i> Class Schedule
+            </h1>
+            <p class="today-date">Today: {{ today|date:"l, F j, Y" }}</p>
+        </div>
+        <a href="{% url 'schedule:add_schedule' %}" class="btn add-schedule-btn">
+            <i class="bi bi-plus-circle"></i> New Schedule
+        </a>
+    </div>
+    
+    <div class="timetable">
+        <div class="timetable-header">
+            <div class="day-header" style="background: rgba(183, 177, 242, 0.2);">
+                <i class="bi bi-clock"></i>
+            </div>
+            {% for day_name in day_names %}
+            <div class="day-header {% if forloop.counter0 == today_index %}today{% endif %}">
+                {{ day_name }}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="timetable-body">
+            <!-- Time markers -->
+            <div class="time-markers">
+                <div class="time-marker" style="top: 0px;">6:00</div>
+                <div class="time-marker" style="top: 75px;">7:00</div>
+                <div class="time-marker" style="top: 150px;">8:00</div>
+                <div class="time-marker" style="top: 225px;">9:00</div>
+                <div class="time-marker" style="top: 300px;">10:00</div>
+                <div class="time-marker" style="top: 375px;">11:00</div>
+                <div class="time-marker" style="top: 450px;">12:00</div>
+                <div class="time-marker" style="top: 525px;">13:00</div>
+                <div class="time-marker" style="top: 600px;">14:00</div>
+                <div class="time-marker" style="top: 675px;">15:00</div>
+                <div class="time-marker" style="top: 750px;">16:00</div>
+                <div class="time-marker" style="top: 825px;">17:00</div>
+                <div class="time-marker" style="top: 900px;">18:00</div>
+                <div class="time-marker" style="top: 975px;">19:00</div>
+                <div class="time-marker" style="top: 1050px;">20:00</div>
+                <div class="time-marker" style="top: 1125px;">21:00</div>
+                <div class="time-marker" style="top: 1200px;">22:00</div>
+            </div>
+            
+            {% for day in days %}
+            <div class="day-column {% if forloop.counter0 == today_index %}today{% endif %}" data-day="{{ day }}">
+                {% if timetable|get_item:day %}
+                    {% for slot_data in timetable|get_item:day %}
+                    <div class="schedule-slot" style="border-color: {{ slot_data.color }}; background: {{ slot_data.color }}20; top: {{ slot_data.top_position }}px;">
+                        <div class="slot-time">{{ slot_data.time_range }}</div>
+                        <div class="slot-title">{{ slot_data.title }}</div>
+                        <div class="schedule-actions">
+                            <a href="{% url 'schedule:edit_schedule' slot_data.schedule.id %}" class="btn edit-btn">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="#" class="btn delete-btn" 
+                               onclick="showDeleteModal('{{ slot_data.schedule.id }}', '{{ slot_data.title }}')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-day">
+                        <i class="bi bi-calendar-x"></i>
+                        <br>No classes scheduled
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="delete-modal">
+    <div class="delete-modal-content">
+        <div class="delete-modal-title">
+            <i class="bi bi-exclamation-triangle"></i> Delete Schedule
+        </div>
+        <div class="delete-modal-message">
+            Are you sure you want to delete "<span id="scheduleTitle"></span>"?
+            <br><br>
+            This action cannot be undone.
+        </div>
+        <div class="delete-modal-actions">
+            <button class="delete-modal-btn delete-modal-cancel" onclick="hideDeleteModal()">
+                Cancel
+            </button>
+            <a href="#" id="confirmDeleteBtn" class="delete-modal-btn delete-modal-confirm">
+                Delete
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Highlight today's column with JavaScript for dynamic updates
+    const today = new Date();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const todayDay = dayNames[today.getDay()];
+    
+    // Find and highlight today's column
+    const todayColumn = document.querySelector(`[data-day="${todayDay}"]`);
+    if (todayColumn) {
+        todayColumn.classList.add('today');
+    }
+    
+    // Add hover effects for schedule slots
+    document.querySelectorAll('.schedule-slot').forEach(slot => {
+        slot.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px) scale(1.02)';
+        });
+        
+        slot.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+});
+
+// Delete Modal Functions
+function showDeleteModal(scheduleId, scheduleTitle) {
+    document.getElementById('scheduleTitle').textContent = scheduleTitle;
+    document.getElementById('confirmDeleteBtn').href = `/schedule/${scheduleId}/delete/`;
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target === modal) {
+        hideDeleteModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        hideDeleteModal();
+    }
+});
+</script>
+{% endblock %}
