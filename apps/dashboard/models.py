@@ -15,6 +15,8 @@ class Todo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField(blank=True, null=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    custom_label = models.CharField(max_length=50, blank=True, null=True)
+    course = models.ForeignKey('courses.Course', on_delete=models.SET_NULL, blank=True, null=True)
     
     class Meta:
         ordering = ['-created_at']

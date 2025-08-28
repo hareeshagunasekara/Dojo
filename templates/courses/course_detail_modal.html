@@ -1,0 +1,453 @@
+{% load static %}
+
+<!-- Course Image Upload Area -->
+<div class="course-image-section mb-4">
+    {% if course.image %}
+        <img src="{{ course.image.url }}" alt="{{ course.name }}" class="course-image" ondblclick="document.getElementById('courseImageInput').click()" style="cursor: pointer;" title="Double-click to change image">
+    {% else %}
+        <div class="course-image-placeholder" ondblclick="document.getElementById('courseImageInput').click()" style="cursor: pointer;" title="Double-click to add image">
+            <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-2">No course image</p>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('courseImageInput').click()">
+                <i class="bi bi-plus-circle"></i> Add Image
+            </button>
+        </div>
+    {% endif %}
+    <input type="file" id="courseImageInput" accept="image/*" style="display: none;" onchange="uploadCourseImage(this)">
+</div>
+
+<!-- Course Name and Edit Button -->
+<div class="course-name-section mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2 class="course-name mb-0">{{ course.name }}</h2>
+        <button type="button" class="btn btn-outline-dark edit-course-btn" data-course-id="{{ course.id }}" onclick="openEditCourseModal({{ course.id }})" style="border: 2px solid #000000; background-color: #FBF3D5;">
+            <i class="bi bi-pencil"></i> Edit Course
+        </button>
+    </div>
+</div>
+
+<!-- Dotted Line -->
+<hr class="dotted-line">
+
+<!-- Instructor Section -->
+<div class="course-info-section mb-3">
+    <div class="info-row">
+        <div class="info-label">
+            <img src="{% static 'img/icons/teacher.png' %}" alt="Teacher" class="info-icon" style="width: 40px; height: 40px;">
+            <span>Instructor</span>
+        </div>
+        <div class="dotted-separator"></div>
+        <div class="info-value">
+            {{ course.instructor|default:"No instructor assigned" }}
+        </div>
+    </div>
+</div>
+
+<!-- Dotted Line -->
+<hr class="dotted-line">
+
+<!-- Room Location Section -->
+<div class="course-info-section mb-4">
+    <div class="info-row">
+        <div class="info-label">
+            <img src="{% static 'img/icons/room.png' %}" alt="Room" class="info-icon" style="width: 40px; height: 40px;">
+            <span>Room Location</span>
+        </div>
+        <div class="dotted-separator"></div>
+        <div class="info-value">
+            {{ course.room_location|default:"No room assigned" }}
+        </div>
+    </div>
+</div>
+
+<!-- Selection Bar -->
+<div class="selection-bar mb-4">
+    <div class="selection-tabs">
+        <button class="selection-tab active" data-tab="todos">
+            <img src="{% static 'img/icons/todo.png' %}" alt="Todos" style="width: 24px; height: 24px; margin-right: 5px;"> To-do
+        </button>
+        <button class="selection-tab" data-tab="files">
+            <img src="{% static 'img/icons/files.png' %}" alt="Files" style="width: 24px; height: 24px; margin-right: 5px;"> Files
+        </button>
+        <button class="selection-tab" data-tab="links">
+            <img src="{% static 'img/icons/link.png' %}" alt="Links" style="width: 24px; height: 24px; margin-right: 5px;"> Links
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content" id="courseTabsContent">
+    <!-- Todos Tab -->
+    <div class="tab-pane fade show active" id="todos" role="tabpanel">
+        <!-- Todo Header with Filter -->
+        <div class="card mb-3" style="background-color: #FBF3D5; border: 2px solid #000000; border-radius: 10px;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #FBF3D5; border-bottom: 2px solid #000000;">
+                <div class="d-flex align-items-center">
+                    <h5 class="mb-0 me-3" style="color: #000000; font-weight: bold;">Course Todos</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-custom dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if current_filter == 'all' %}
+                                <i class="bi bi-list-ul"></i> All Todos
+                            {% elif current_filter == 'ongoing' %}
+                                <i class="bi bi-clock"></i> Ongoing
+                            {% elif current_filter == 'missed' %}
+                                <i class="bi bi-exclamation-triangle"></i> Missed
+                            {% elif current_filter == 'completed' %}
+                                <i class="bi bi-check-circle"></i> Completed
+                            {% endif %}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="filterCourseTodos('all')">
+                                <i class="bi bi-list-ul"></i> All Todos
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterCourseTodos('ongoing')">
+                                <i class="bi bi-clock"></i> Ongoing
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterCourseTodos('missed')">
+                                <i class="bi bi-exclamation-triangle"></i> Missed
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterCourseTodos('completed')">
+                                <i class="bi bi-check-circle"></i> Completed
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addTodoModal">
+                    <i class="bi bi-plus-circle"></i> Add Todo
+                </button>
+            </div>
+            <div class="card-body" style="background-color: transparent;">
+                {% if course_todos %}
+                    <div class="list-group">
+                        {% for todo in course_todos %}
+                            <div class="list-group-item todo-item {% if todo.completed %}completed{% endif %} {% if todo.is_missed %}missed{% endif %}" style="border: 2px solid {% if todo.is_missed %}#dc3545{% else %}black{% endif %}; background-color: #FBF3D5; margin-bottom: 8px; border-radius: 8px; min-height: 50px; cursor: pointer;" onclick="openCourseTodoDialog({{ todo.id }}, '{{ todo.title|escapejs }}', '{{ todo.description|escapejs }}', '{{ todo.due_date|date:"Y-m-d"|default:"" }}')">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center flex-grow-1">
+                                        <!-- Pin Icon - Compact -->
+                                        <img src="{% static 'img/icons/pin.png' %}" alt="Pin" style="width: 35px; height: 35px; margin-right: 12px;">
+                                        
+                                        <!-- Todo Content -->
+                                        <div class="flex-grow-1">
+                                            <!-- First line: Todo name | Date -->
+                                            <div class="d-flex align-items-center mb-1">
+                                                <h6 class="mb-0 fw-bold me-2" style="color: #000; font-size: 1rem;">{{ todo.title }}</h6>
+                                                <span style="color: #000; font-weight: bold;">|</span>
+                                                {% if todo.due_date %}
+                                                    <small class="text-muted ms-2" style="white-space: nowrap; font-size: 0.8rem;">
+                                                        {{ todo.due_date|date:"M d, Y" }}
+                                                    </small>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <!-- Second line: Label | Description -->
+                                            <div class="d-flex align-items-center">
+                                                <span style="color: #000; font-weight: 500; font-size: 0.85rem;">
+                                                    {% if todo.custom_label %}
+                                                        {{ todo.custom_label }}
+                                                    {% elif todo.course %}
+                                                        {{ todo.course.name }}
+                                                    {% else %}
+                                                        No Label
+                                                    {% endif %}
+                                                </span>
+                                                <span style="color: #000; font-weight: bold; margin: 0 8px;">|</span>
+                                                <span class="text-muted" style="font-size: 0.85rem;">
+                                                    {% if todo.description %}
+                                                        {{ todo.description|truncatechars:60 }}
+                                                    {% else %}
+                                                        No description
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Checkbox -->
+                                    <div class="ms-3">
+                                        <input class="form-check-input todo-toggle" type="checkbox" 
+                                               data-todo-id="{{ todo.id }}"
+                                               style="width: 20px; height: 20px; cursor: pointer;"
+                                               {% if todo.completed %}checked{% endif %}
+                                               onclick="event.stopPropagation();">
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <img src="{% static 'img/icons/todo.png' %}" alt="Todo" style="width: 60px; height: 60px; opacity: 0.6;">
+                        <h5 class="text-muted mt-3">No todos yet</h5>
+                        <p class="text-muted">Start by adding your first todo!</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTodoModal">
+                            <i class="bi bi-plus"></i> Add Todo
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Files Tab -->
+    <div class="tab-pane fade" id="files" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Course Files</h4>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFileModal">
+                <i class="bi bi-plus-circle"></i> Add File
+            </button>
+        </div>
+        
+        {% if course.files.all %}
+            <div class="row">
+                {% for file in course.files.all %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ file.title }}</h6>
+                                {% if file.description %}
+                                    <p class="card-text text-muted">{{ file.description|truncatechars:100 }}</p>
+                                {% endif %}
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> {{ file.uploaded_at|date:"M d, Y" }}
+                                </small>
+                            </div>
+                            <div class="card-footer bg-light">
+                                <a href="{{ file.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-file-earmark" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-2">No files uploaded yet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Links Tab -->
+    <div class="tab-pane fade" id="links" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Course Links</h4>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLinkModal">
+                <i class="bi bi-plus-circle"></i> Add Link
+            </button>
+        </div>
+        
+        {% if course.links.all %}
+            <div class="row">
+                {% for link in course.links.all %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ link.title }}</h6>
+                                {% if link.description %}
+                                    <p class="card-text text-muted">{{ link.description|truncatechars:100 }}</p>
+                                {% endif %}
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> {{ link.created_at|date:"M d, Y" }}
+                                </small>
+                            </div>
+                            <div class="card-footer bg-light">
+                                <a href="{{ link.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="bi bi-box-arrow-up-right"></i> Visit Link
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-link-45deg" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-2">No links added yet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Include Todo Action Modal -->
+{% include 'dashboard/todo_action_modal.html' %}
+
+<!-- Add File Modal -->
+<div class="modal fade" id="addFileModal" tabindex="-1" aria-labelledby="addFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border: 2px solid #000000; background-color: #FBF3D5;">
+            <div class="modal-header" style="background-color: #FBF3D5; border-bottom: 2px solid #000000;">
+                <h5 class="modal-title" id="addFileModalLabel" style="color: #000000; font-weight: bold;">Add File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'courses:add_file' course.id %}" enctype="multipart/form-data" id="addFileForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="file_title" class="form-label fw-bold" style="color: #000000;">File Title</label>
+                        <input type="text" class="form-control" id="file_title" name="title" required style="border: 2px solid #000000; background-color: #FFFFFF;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="file_description" class="form-label fw-bold" style="color: #000000;">Description (Optional)</label>
+                        <textarea class="form-control" id="file_description" name="description" rows="3" style="border: 2px solid #000000; background-color: #FFFFFF;"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="file_upload" class="form-label fw-bold" style="color: #000000;">Choose File</label>
+                        <input type="file" class="form-control" id="file_upload" name="file" required style="border: 2px solid #000000; background-color: #FFFFFF;">
+                        <small class="text-muted">Maximum file size: 10MB</small>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background-color: #FBF3D5; border-top: 2px solid #000000;">
+                    <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal" style="border: 2px solid #000000; background-color: #FBF3D5;">Cancel</button>
+                    <button type="submit" class="btn btn-outline-dark" style="border: 2px solid #000000; background-color: #FBF3D5;">
+                        <i class="bi bi-upload"></i> Upload File
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Link Modal -->
+<div class="modal fade" id="addLinkModal" tabindex="-1" aria-labelledby="addLinkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border: 2px solid #000000; background-color: #FBF3D5;">
+            <div class="modal-header" style="background-color: #FBF3D5; border-bottom: 2px solid #000000;">
+                <h5 class="modal-title" id="addLinkModalLabel" style="color: #000000; font-weight: bold;">Add Link</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'courses:add_link' course.id %}" id="addLinkForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="link_title" class="form-label fw-bold" style="color: #000000;">Link Title</label>
+                        <input type="text" class="form-control" id="link_title" name="title" required style="border: 2px solid #000000; background-color: #FFFFFF;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="link_description" class="form-label fw-bold" style="color: #000000;">Description (Optional)</label>
+                        <textarea class="form-control" id="link_description" name="description" rows="3" style="border: 2px solid #000000; background-color: #FFFFFF;"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="link_url" class="form-label fw-bold" style="color: #000000;">URL</label>
+                        <input type="url" class="form-control" id="link_url" name="url" placeholder="https://example.com" required style="border: 2px solid #000000; background-color: #FFFFFF;">
+                    </div>
+                </div>
+                <div class="modal-footer" style="background-color: #FBF3D5; border-top: 2px solid #000000;">
+                    <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal" style="border: 2px solid #000000; background-color: #FBF3D5;">Cancel</button>
+                    <button type="submit" class="btn btn-outline-dark" style="border: 2px solid #000000; background-color: #FBF3D5;">
+                        <i class="bi bi-link-45deg"></i> Add Link
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle file upload form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const addFileForm = document.getElementById('addFileForm');
+    if (addFileForm) {
+        addFileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close the modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addFileModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    if (typeof showToast === 'function') {
+                        showToast('File uploaded successfully!', 'success');
+                    } else {
+                        alert('File uploaded successfully!');
+                    }
+                    
+                    // Reload the course detail modal to show new file
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    // Show error message
+                    if (typeof showToast === 'function') {
+                        showToast('Error uploading file. Please try again.', 'danger');
+                    } else {
+                        alert('Error uploading file. Please try again.');
+                    }
+                }
+            })
+            .catch(error => {
+                if (typeof showToast === 'function') {
+                    showToast('Error uploading file. Please try again.', 'danger');
+                } else {
+                    alert('Error uploading file. Please try again.');
+                }
+            });
+        });
+    }
+
+    // Handle link form submission
+    const addLinkForm = document.getElementById('addLinkForm');
+    if (addLinkForm) {
+        addLinkForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close the modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addLinkModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    if (typeof showToast === 'function') {
+                        showToast('Link added successfully!', 'success');
+                    } else {
+                        alert('Link added successfully!');
+                    }
+                    
+                    // Reload the course detail modal to show new link
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    // Show error message
+                    if (typeof showToast === 'function') {
+                        showToast('Error adding link. Please try again.', 'danger');
+                    } else {
+                        alert('Error adding link. Please try again.');
+                    }
+                }
+            })
+            .catch(error => {
+                if (typeof showToast === 'function') {
+                    showToast('Error adding link. Please try again.', 'danger');
+                } else {
+                    alert('Error adding link. Please try again.');
+                }
+            });
+        });
+    }
+});
+</script>

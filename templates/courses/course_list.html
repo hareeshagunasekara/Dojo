@@ -17,7 +17,10 @@
                 <h2 class="mb-0">
                      My Courses
                 </h2>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="search-container">
+                        <input type="text" class="form-control" id="courseSearchInput" placeholder="Search courses..." style="border: 2px solid #000000; background-color: #FBF3D5; width: 200px; border-radius: 8px; padding: 8px 12px;">
+                    </div>
                     <button type="button" class="btn btn-outline-secondary" id="selectModeBtn" onclick="toggleSelectMode()">
                         <i class="bi bi-three-dots"></i>
                     </button>
@@ -119,6 +122,9 @@
     </div>
 </div>
 
+<!-- Include Add Todo Modal -->
+{% include 'dashboard/add_todo_modal.html' %}
+
 <script>
 let selectMode = false;
 let selectedCourses = new Set();
@@ -165,7 +171,7 @@ function toggleSelectMode() {
         courseFolders.forEach(folder => {
             const courseId = folder.getAttribute('data-course-id');
             folder.onclick = function() {
-                window.location.href = `/courses/${courseId}/`;
+                openCourseDetailModal(courseId);
             };
             folder.classList.remove('selected');
         });
@@ -327,14 +333,337 @@ function createToastContainer() {
 
 // Initialize normal navigation on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize label selection tabs
+    initializeLabelTabs();
+    
     const courseFolders = document.querySelectorAll('.course-folder');
     courseFolders.forEach(folder => {
         const courseId = folder.getAttribute('data-course-id');
         folder.onclick = function() {
-            window.location.href = `/courses/${courseId}/`;
+            openCourseDetailModal(courseId);
         };
     });
 });
+
+function openCourseDetailModal(courseId) {
+    // Get the course folder color from the clicked folder
+    const courseFolder = document.querySelector(`[data-course-id="${courseId}"]`);
+    const folderColor = courseFolder ? courseFolder.querySelector('.folder-icon').style.color : '#B7B1F2';
+    
+    // Fetch course detail content
+    fetch(`/courses/${courseId}/detail-modal/`)
+        .then(response => response.text())
+        .then(html => {
+            // Create modal container
+            const modalHTML = `
+                <div class="modal fade" id="courseDetailModal" tabindex="-1" aria-labelledby="courseDetailModalLabel" aria-hidden="true" data-course-id="${courseId}">
+                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                        <div class="modal-content course-detail-modal" style="--course-color: ${folderColor}; --course-color-light: ${folderColor}80;">
+                            <div class="modal-header-custom" style="background: linear-gradient(135deg, ${folderColor}, ${folderColor}80) !important;">
+                                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            <div class="modal-body-custom modal-scrollable">
+                                ${html}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('courseDetailModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('courseDetailModal'));
+            modal.show();
+            
+            // Debug: Check if modal is visible
+            console.log('Modal created:', document.getElementById('courseDetailModal'));
+            console.log('Modal content:', document.querySelector('.course-detail-modal'));
+            
+            // Initialize selection tabs
+            initializeSelectionTabs();
+            
+            // Initialize course todo handlers after modal is shown
+            setTimeout(() => {
+                initializeCourseTodoHandlers();
+            }, 100);
+            
+            // Clean up modal after it's hidden
+            document.getElementById('courseDetailModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        })
+        .catch(error => {
+            console.error('Error loading course details:', error);
+            showToast('Error loading course details. Please try again.', 'danger');
+        });
+}
+
+function initializeSelectionTabs() {
+    const tabs = document.querySelectorAll('.selection-tab');
+    const tabContents = document.querySelectorAll('.tab-pane');
+    
+    // Set "To-do" tab as active by default
+    tabs.forEach(t => t.classList.remove('active'));
+    tabContents.forEach(content => content.classList.remove('show', 'active'));
+    
+    const todosTab = document.querySelector('.selection-tab[data-tab="todos"]');
+    const todosContent = document.getElementById('todos');
+    
+    if (todosTab && todosContent) {
+        todosTab.classList.add('active');
+        todosContent.classList.add('show', 'active');
+    }
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+            
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show/hide tab content
+            tabContents.forEach(content => {
+                if (content.id === targetTab) {
+                    content.classList.add('show', 'active');
+                } else {
+                    content.classList.remove('show', 'active');
+                }
+            });
+        });
+    });
+}
+
+function uploadCourseImage(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        // Get course ID from the modal
+        const courseId = document.querySelector('#courseDetailModal').getAttribute('data-course-id');
+        
+        // Show loading state
+        const imageSection = document.querySelector('.course-image-section');
+        imageSection.innerHTML = `
+            <div class="course-image-placeholder">
+                <i class="bi bi-hourglass-split" style="font-size: 2rem; color: #B7B1F2;"></i>
+                <p class="text-muted mt-2">Uploading image...</p>
+            </div>
+        `;
+        
+        fetch(`/courses/${courseId}/upload-image/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the image display
+                imageSection.innerHTML = `
+                    <img src="${data.image_url}" alt="Course Image" class="course-image">
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="document.getElementById('courseImageInput').click()">
+                        <i class="bi bi-pencil"></i> Change Image
+                    </button>
+                `;
+                showToast('Course image uploaded successfully!', 'success');
+            } else {
+                // Restore placeholder
+                imageSection.innerHTML = `
+                    <div class="course-image-placeholder">
+                        <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="text-muted mt-2">No course image</p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('courseImageInput').click()">
+                            <i class="bi bi-plus-circle"></i> Add Image
+                        </button>
+                    </div>
+                `;
+                showToast('Error uploading image. Please try again.', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error uploading image:', error);
+            // Restore placeholder
+            imageSection.innerHTML = `
+                <div class="course-image-placeholder">
+                    <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No course image</p>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('courseImageInput').click()">
+                        <i class="bi bi-plus-circle"></i> Add Image
+                    </button>
+                </div>
+            `;
+            showToast('Error uploading image. Please try again.', 'danger');
+        });
+    }
+}
+
+// Function to filter course todos
+function filterCourseTodos(filterType) {
+    const courseId = document.querySelector('#courseDetailModal').getAttribute('data-course-id');
+    const currentUrl = `/courses/${courseId}/detail-modal/?filter=${filterType}`;
+    
+    fetch(currentUrl)
+        .then(response => response.text())
+        .then(html => {
+            // Update the modal body content
+            const modalBody = document.querySelector('#courseDetailModal .modal-body-custom');
+            modalBody.innerHTML = html;
+            
+            // Reinitialize any necessary event listeners
+            initializeCourseTodoHandlers();
+        })
+        .catch(error => {
+            console.error('Error filtering todos:', error);
+        });
+}
+
+// Function to open course todo dialog
+function openCourseTodoDialog(todoId, title, description, dueDate) {
+    // Store todo data for editing
+    window.todoData = {
+        id: todoId,
+        title: title,
+        description: description,
+        dueDate: dueDate
+    };
+    
+    // Show the action dialog
+    const actionModal = new bootstrap.Modal(document.getElementById('todoActionModal'));
+    actionModal.show();
+}
+
+    // Function to initialize label selection tabs
+    function initializeLabelTabs() {
+        const labelTabs = document.querySelectorAll('.label-tab');
+        
+        labelTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const labelType = this.getAttribute('data-label-type');
+                
+                // Update active tab
+                labelTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show/hide appropriate dropdown
+                const customDropdown = document.getElementById('custom-label-dropdown');
+                const courseDropdown = document.getElementById('course-label-dropdown');
+                
+                if (labelType === 'custom') {
+                    customDropdown.style.display = 'block';
+                    courseDropdown.style.display = 'none';
+                    // Clear course selection
+                    document.getElementById('course_label').value = '';
+                } else if (labelType === 'course') {
+                    customDropdown.style.display = 'none';
+                    courseDropdown.style.display = 'block';
+                    // Clear custom selection
+                    document.getElementById('custom_label').value = '';
+                }
+            });
+        });
+    }
+
+    // Function to initialize course todo handlers
+    function initializeCourseTodoHandlers() {
+        // Handle todo checkbox toggles in course modal
+        const todoCheckboxes = document.querySelectorAll('#courseDetailModal .todo-toggle');
+        
+        todoCheckboxes.forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                const todoId = this.getAttribute('data-todo-id');
+                const isChecked = this.checked;
+                const todoItem = this.closest('.todo-item');
+                
+                // Get CSRF token
+                const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                
+                // Optimistic UI update
+                if (isChecked) {
+                    todoItem.classList.add('completed');
+                } else {
+                    todoItem.classList.remove('completed');
+                }
+                
+                // Make the AJAX request
+                fetch(`/dashboard/todo/${todoId}/toggle/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.completed) {
+                        // Revert optimistic update if failed
+                        if (isChecked) {
+                            todoItem.classList.remove('completed');
+                            checkbox.checked = false;
+                        } else {
+                            todoItem.classList.add('completed');
+                            checkbox.checked = true;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Revert optimistic update on error
+                    if (isChecked) {
+                        todoItem.classList.remove('completed');
+                        checkbox.checked = false;
+                    } else {
+                        todoItem.classList.add('completed');
+                        checkbox.checked = true;
+                    }
+                });
+            });
+        });
+        
+        // Initialize label tabs in course todo modal
+        const labelTabs = document.querySelectorAll('#courseDetailModal .label-tab');
+        
+        labelTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const labelType = this.getAttribute('data-label-type');
+                
+                // Update active tab
+                labelTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show/hide appropriate dropdown
+                const customDropdown = document.getElementById('course-custom-label-dropdown');
+                const courseDropdown = document.getElementById('course-course-label-dropdown');
+                
+                if (labelType === 'custom') {
+                    customDropdown.style.display = 'block';
+                    courseDropdown.style.display = 'none';
+                    // Clear course selection
+                    document.getElementById('course_course_label').value = '';
+                } else if (labelType === 'course') {
+                    customDropdown.style.display = 'none';
+                    courseDropdown.style.display = 'block';
+                    // Clear custom selection
+                    document.getElementById('course_custom_label').value = '';
+                }
+            });
+        });
+        
+
+    }
 </script>
 
 <style>
@@ -410,6 +739,58 @@ document.addEventListener('DOMContentLoaded', function() {
     filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
 }
 
+/* Modal styling is now in dojo.css */
+
+.course-detail-modal .card {
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 2px solid #e0e0e0;
+    transition: transform 0.2s ease;
+}
+
+.course-detail-modal .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.course-detail-modal .nav-tabs {
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.course-detail-modal .nav-tabs .nav-link {
+    border-radius: 10px 10px 0 0;
+    border: 2px solid transparent;
+    margin-right: 5px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.course-detail-modal .nav-tabs .nav-link:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(183, 177, 242, 0.1);
+}
+
+.course-detail-modal .nav-tabs .nav-link.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.course-detail-modal .tab-content {
+    padding: 1.5rem 0;
+}
+
+.course-detail-modal .btn {
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.course-detail-modal .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
 .btn-custom {
     background-color: #FBF3D5;
     border: 2px solid #000000;
@@ -432,5 +813,320 @@ document.addEventListener('DOMContentLoaded', function() {
     color: #000000;
     box-shadow: 0 0 0 0.2rem rgba(0,0,0,0.25);
 }
+
+/* Edit Course Modal Styles */
+.color-picker {
+    margin-top: 10px;
+}
+
+.color-options {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    position: relative;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.color-option:has(input:checked) {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px #000000;
+}
+
+.color-option:has(input:checked)::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #000000;
+    font-weight: bold;
+    font-size: 16px;
+}
 </style>
+
+<!-- Edit Course Modal -->
+<div class="modal fade" id="editCourseModal" tabindex="-1" aria-labelledby="editCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border: 2px solid #000000; background-color: #FBF3D5;">
+            <div class="modal-header" style="background-color: #FBF3D5; border-bottom: 2px solid #000000;">
+                <h5 class="modal-title" id="editCourseModalLabel" style="color: #000000; font-weight: bold;">Edit Course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="editCourseForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Course Name -->
+                    <div class="mb-4">
+                        <label for="edit_course_name" class="form-label fw-bold" style="color: #000000;">Course Name</label>
+                        <input type="text" class="form-control" id="edit_course_name" name="name" required style="border: 2px solid #000000; background-color: #FFFFFF;">
+                    </div>
+
+                    <!-- Instructor (Optional) -->
+                    <div class="mb-4">
+                        <label for="edit_course_instructor" class="form-label fw-bold" style="color: #000000;">Instructor (Optional)</label>
+                        <input type="text" class="form-control" id="edit_course_instructor" name="instructor" style="border: 2px solid #000000; background-color: #FFFFFF;">
+                    </div>
+
+                    <!-- Room Location (Optional) -->
+                    <div class="mb-4">
+                        <label for="edit_course_room" class="form-label fw-bold" style="color: #000000;">Room Location (Optional)</label>
+                        <input type="text" class="form-control" id="edit_course_room" name="room_location" style="border: 2px solid #000000; background-color: #FFFFFF;">
+                    </div>
+
+                    <!-- Course Color -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" style="color: #000000;">Course Color</label>
+                        <div class="color-picker">
+                            <div class="color-options">
+                                <input type="radio" id="edit-color-ffe0ef" name="folder_color" value="#FFE0EF" style="display: none;">
+                                <label for="edit-color-ffe0ef" class="color-option" style="background-color: #FFE0EF; border: 2px solid #000000;"></label>
+                                
+                                <input type="radio" id="edit-color-BFECFF" name="folder_color" value="#BFECFF" style="display: none;">
+                                <label for="edit-color-BFECFF" class="color-option" style="background-color: #BFECFF; border: 2px solid #000000;"></label>
+                                
+                                <input type="radio" id="edit-color-B7B1F2" name="folder_color" value="#B7B1F2" style="display: none;">
+                                <label for="edit-color-B7B1F2" class="color-option" style="background-color: #B7B1F2; border: 2px solid #000000;"></label>
+                                
+                                <input type="radio" id="edit-color-c1cfa1" name="folder_color" value="#C1CFA1" style="display: none;">
+                                <label for="edit-color-c1cfa1" class="color-option" style="background-color: #C1CFA1; border: 2px solid #000000;"></label>
+                                
+                                <input type="radio" id="edit-color-f0a04b" name="folder_color" value="#F0A04B" style="display: none;">
+                                <label for="edit-color-f0a04b" class="color-option" style="background-color: #F0A04B; border: 2px solid #000000;"></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Course Image Preview -->
+                    <div class="mb-4" id="currentImagePreview" style="display: none;">
+                        <label class="form-label fw-bold" style="color: #000000;">Current Course Image</label>
+                        <div class="text-center">
+                            <img id="currentCourseImage" alt="Current course image" style="width: 150px; height: 150px; object-fit: cover; border-radius: 10px; border: 2px solid #000000;">
+                        </div>
+                    </div>
+
+                    <!-- New Course Image -->
+                    <div class="mb-4">
+                        <label for="edit_course_image" class="form-label fw-bold" style="color: #000000;">New Course Image (Optional)</label>
+                        <input type="file" class="form-control" id="edit_course_image" name="image" accept="image/*" style="border: 2px solid #000000; background-color: #FFFFFF;">
+                        <small class="text-muted">Leave empty to keep the current image</small>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background-color: #FBF3D5; border-top: 2px solid #000000;">
+                    <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal" style="border: 2px solid #000000; background-color: #FBF3D5;">Cancel</button>
+                    <button type="submit" class="btn btn-outline-dark" style="border: 2px solid #000000; background-color: #FBF3D5;">
+                        <i class="bi bi-check-circle"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to open edit course modal with course data (global function)
+window.openEditCourseModal = function(courseId) {
+    // Check if Bootstrap is available
+    if (typeof bootstrap === 'undefined') {
+        alert('Bootstrap is not loaded. Please refresh the page.');
+        return;
+    }
+    
+    // Get course data from the current modal context
+    const currentCourseName = document.querySelector('.course-name')?.textContent?.trim() || '';
+    const currentInstructor = document.querySelectorAll('.info-value')[0]?.textContent?.trim() || '';
+    const currentRoomLocation = document.querySelectorAll('.info-value')[1]?.textContent?.trim() || '';
+    
+    // Set form action
+    const editForm = document.getElementById('editCourseForm');
+    if (!editForm) {
+        alert('Edit form not found. Please refresh the page.');
+        return;
+    }
+    
+    editForm.setAttribute('data-course-id', courseId);
+    editForm.action = `/courses/${courseId}/edit/`;
+    
+    // Populate form fields
+    const nameField = document.getElementById('edit_course_name');
+    const instructorField = document.getElementById('edit_course_instructor');
+    const roomField = document.getElementById('edit_course_room');
+    
+    if (nameField) {
+        nameField.value = currentCourseName;
+    }
+    if (instructorField) {
+        instructorField.value = currentInstructor === 'No instructor assigned' ? '' : currentInstructor;
+    }
+    if (roomField) {
+        roomField.value = currentRoomLocation === 'No room assigned' ? '' : currentRoomLocation;
+    }
+    
+    // Set default color
+    const colorInput = document.querySelector('#edit-color-B7B1F2');
+    if (colorInput) {
+        colorInput.checked = true;
+        const colorOption = colorInput.closest('.color-option');
+        if (colorOption) {
+            colorOption.classList.add('selected');
+        }
+    } else {
+        // Try alternative selector
+        const altColorInput = document.querySelector('input[name="folder_color"][value="#B7B1F2"]');
+        if (altColorInput) {
+            altColorInput.checked = true;
+        }
+    }
+    
+    // Hide current image preview for now (can be enhanced later)
+    const imagePreview = document.getElementById('currentImagePreview');
+    if (imagePreview) imagePreview.style.display = 'none';
+    
+    // Show modal
+    const editModalElement = document.getElementById('editCourseModal');
+    if (editModalElement) {
+        try {
+            const editModal = new bootstrap.Modal(editModalElement);
+            editModal.show();
+            
+            // Check if modal is actually visible after a short delay
+            setTimeout(() => {
+                if (!editModalElement.classList.contains('show')) {
+                    // Try to force show the modal
+                    editModalElement.style.display = 'block';
+                    editModalElement.classList.add('show');
+                    editModalElement.style.zIndex = '9999';
+                    editModalElement.style.position = 'fixed';
+                }
+            }, 100);
+            
+        } catch (error) {
+            alert('Error showing modal: ' + error.message);
+        }
+    } else {
+        alert('Edit modal element not found. Please refresh the page.');
+    }
+}
+
+// Initialize edit course modal functionality
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Course search functionality
+    const courseSearchInput = document.getElementById('courseSearchInput');
+    if (courseSearchInput) {
+        courseSearchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const courseFolders = document.querySelectorAll('.course-folder');
+            
+            courseFolders.forEach(folder => {
+                const courseName = folder.querySelector('text').textContent.toLowerCase();
+                const courseContainer = folder.closest('.col-md-4');
+                
+                if (courseName.includes(searchTerm)) {
+                    courseContainer.style.display = 'block';
+                } else {
+                    courseContainer.style.display = 'none';
+                }
+            });
+            
+            // Show/hide "no results" message
+            const visibleCourses = document.querySelectorAll('.col-md-4[style*="display: block"], .col-md-4:not([style*="display: none"])');
+            const noResultsMessage = document.getElementById('noSearchResults');
+            
+            if (searchTerm && visibleCourses.length === 0) {
+                if (!noResultsMessage) {
+                    const noResults = document.createElement('div');
+                    noResults.id = 'noSearchResults';
+                    noResults.className = 'text-center py-5';
+                    noResults.innerHTML = `
+                        <img src="/static/img/icons/courses.png" alt="Courses" style="width: 80px; height: 80px; opacity: 0.6;">
+                        <h4 class="text-muted mt-3">No courses found</h4>
+                        <p class="text-muted">Try a different search term</p>
+                    `;
+                    document.getElementById('coursesRow').appendChild(noResults);
+                }
+            } else if (noResultsMessage) {
+                noResultsMessage.remove();
+            }
+        });
+    }
+
+    // Color picker functionality for edit modal
+    const editColorOptions = document.querySelectorAll('#editCourseModal .color-option');
+    editColorOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove checked from all options in edit modal
+            editColorOptions.forEach(opt => opt.classList.remove('selected'));
+            // Add checked to clicked option
+            this.classList.add('selected');
+            // Check the radio button
+            this.querySelector('input').checked = true;
+        });
+    });
+
+    // Handle edit course form submission
+    const editForm = document.getElementById('editCourseForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const courseId = this.getAttribute('data-course-id');
+            
+            fetch(`/courses/${courseId}/edit/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close the edit modal
+                    const editModal = bootstrap.Modal.getInstance(document.getElementById('editCourseModal'));
+                    editModal.hide();
+                    
+                    // Show success message
+                    if (typeof showToast === 'function') {
+                        showToast('Course updated successfully!', 'success');
+                    } else {
+                        alert('Course updated successfully!');
+                    }
+                    
+                    // Reload the page to show updated course
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    // Show error message
+                    if (typeof showToast === 'function') {
+                        showToast('Error updating course. Please try again.', 'danger');
+                    } else {
+                        alert('Error updating course. Please try again.');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (typeof showToast === 'function') {
+                    showToast('Error updating course. Please try again.', 'danger');
+                } else {
+                    alert('Error updating course. Please try again.');
+                }
+            });
+        });
+    }
+});
+</script>
 {% endblock %}

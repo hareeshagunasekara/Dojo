@@ -6,6 +6,7 @@ from datetime import date, datetime
 from .models import Todo
 from .forms import TodoForm
 from apps.accounts.models import StudentProfile
+from apps.courses.models import Course
 
 @login_required
 def home(request):
@@ -63,6 +64,9 @@ def home(request):
     if total_todos > 0:
         progress_percentage = int((completed_todos / total_todos) * 100)
     
+    # Get user's courses for the todo label dropdown
+    user_courses = Course.objects.filter(user=request.user).order_by('name')
+    
     context = {
         'todos': todos,
         'form': form,
@@ -74,6 +78,7 @@ def home(request):
         'today': today,
         'current_filter': filter_type,
         'student_profile': student_profile,
+        'user_courses': user_courses,
     }
     return render(request, 'dashboard/home.html', context)
 
@@ -84,6 +89,19 @@ def add_todo(request):
         if form.is_valid():
             todo = form.save(commit=False)
             todo.user = request.user
+            
+            # Handle label fields
+            custom_label = request.POST.get('custom_label')
+            course_id = request.POST.get('course_label')
+            
+            if custom_label:
+                todo.custom_label = custom_label
+            elif course_id:
+                try:
+                    todo.course = Course.objects.get(id=course_id, user=request.user)
+                except Course.DoesNotExist:
+                    pass
+            
             todo.save()
             messages.success(request, 'Todo added successfully!')
             return redirect('dashboard:home')
