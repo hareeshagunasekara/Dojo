@@ -241,3 +241,10 @@ def add_course_todo(request, course_id):
         form = CourseTodoForm()
     
     return render(request, 'courses/add_course_todo.html', {'form': form, 'course': course})
+
+# API endpoint for calendar events
+@login_required
+def api_courses(request):
+    """API endpoint to get user's courses for calendar events"""
+    courses = Course.objects.filter(user=request.user).values('id', 'name')
+    return JsonResponse(list(courses), safe=False)

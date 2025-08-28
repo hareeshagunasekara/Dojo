@@ -1,0 +1,175 @@
+<!-- Add Event Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-container">
+                    <div class="title-icon">
+                        <i class="bi bi-calendar-plus"></i>
+                    </div>
+                    <div class="title-text">
+                        <h5 class="modal-title" id="addEventModalLabel">Create New Event</h5>
+                        <p class="title-subtitle">Plan your schedule with style</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addEventForm" method="POST" action="{% url 'calendarapp:add_event_ajax' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Event Type Selection -->
+                    <div class="event-type-section">
+                        <h6 class="section-title">
+                            <i class="bi bi-tag"></i> What type of event is this?
+                        </h6>
+                        <div class="event-type-grid">
+                            <div class="event-type-option" data-type="class">
+                                <div class="type-icon class-icon">
+                                    <i class="bi bi-book"></i>
+                                </div>
+                                <span>Class</span>
+                            </div>
+                            <div class="event-type-option" data-type="exam">
+                                <div class="type-icon exam-icon">
+                                    <i class="bi bi-file-text"></i>
+                                </div>
+                                <span>Exam</span>
+                            </div>
+                            <div class="event-type-option" data-type="assignment">
+                                <div class="type-icon assignment-icon">
+                                    <i class="bi bi-pencil"></i>
+                                </div>
+                                <span>Assignment</span>
+                            </div>
+                            <div class="event-type-option" data-type="meeting">
+                                <div class="type-icon meeting-icon">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                                <span>Meeting</span>
+                            </div>
+                            <div class="event-type-option" data-type="personal">
+                                <div class="type-icon personal-icon">
+                                    <i class="bi bi-heart"></i>
+                                </div>
+                                <span>Personal</span>
+                            </div>
+                            <div class="event-type-option" data-type="other">
+                                <div class="type-icon other-icon">
+                                    <i class="bi bi-three-dots"></i>
+                                </div>
+                                <span>Other</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="event_type" name="event_type" value="other">
+                    </div>
+
+                    <!-- Event Details -->
+                    <div class="event-details-section">
+                        <h6 class="section-title">
+                            <i class="bi bi-info-circle"></i> Event Details
+                        </h6>
+                        <div class="form-group">
+                            <label for="title" class="form-label">
+                                <i class="bi bi-pencil-square"></i> Event Title *
+                            </label>
+                            <input type="text" class="form-control event-title-input" id="title" name="title" required 
+                                   placeholder="Enter a catchy title for your event">
+                        </div>
+                    </div>
+
+                    <!-- Date & Time Section -->
+                    <div class="datetime-section">
+                        <h6 class="section-title">
+                            <i class="bi bi-clock"></i> When is this happening?
+                        </h6>
+                        
+                        <div class="all-day-toggle">
+                            <div class="toggle-container">
+                                <input type="checkbox" id="is_all_day" name="is_all_day" class="toggle-input">
+                                <label for="is_all_day" class="toggle-label">
+                                    <span class="toggle-text">All Day Event</span>
+                                    <div class="toggle-switch"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="datetime-grid">
+                            <div class="date-group">
+                                <div class="date-input-group">
+                                    <label for="start_date" class="form-label">
+                                        <i class="bi bi-calendar-event"></i> Start Date *
+                                    </label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                </div>
+                                <div class="time-input-group" id="start_time_group">
+                                    <label for="start_time" class="form-label">
+                                        <i class="bi bi-clock"></i> Start Time
+                                    </label>
+                                    <input type="time" class="form-control" id="start_time" name="start_time">
+                                </div>
+                            </div>
+                            
+                            <div class="date-group">
+                                <div class="date-input-group">
+                                    <label for="end_date" class="form-label">
+                                        <i class="bi bi-calendar-event"></i> End Date *
+                                    </label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" required>
+                                </div>
+                                <div class="time-input-group" id="end_time_group">
+                                    <label for="end_time" class="form-label">
+                                        <i class="bi bi-clock"></i> End Time
+                                    </label>
+                                    <input type="time" class="form-control" id="end_time" name="end_time">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Details -->
+                    <div class="additional-details-section">
+                        <h6 class="section-title">
+                            <i class="bi bi-gear"></i> Additional Details
+                        </h6>
+                        
+                        <div class="details-grid">
+                            <div class="form-group">
+                                <label for="course" class="form-label">
+                                    <i class="bi bi-mortarboard"></i> Related Course
+                                </label>
+                                <select class="form-select" id="course" name="course">
+                                    <option value="">Select a course (optional)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="location" class="form-label">
+                                    <i class="bi bi-geo-alt"></i> Location
+                                </label>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       placeholder="Room number, building, etc.">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description" class="form-label">
+                                <i class="bi bi-chat-text"></i> Description
+                            </label>
+                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                      placeholder="Tell us more about this event..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary cancel-btn" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary create-btn">
+                        <i class="bi bi-plus-circle"></i> Create Event
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
