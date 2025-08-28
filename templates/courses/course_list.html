@@ -3,6 +3,24 @@
 
 {% block title %}My Courses - Dojo{% endblock %}
 
+{% block extra_css %}
+<style>
+    .settings-header {
+        background: #FBF3D5;
+        padding: 1rem;
+        border: 2px dotted #000;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .settings-header h2 {
+        color: #000;
+        font-weight: bold;
+        margin: 0;
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Flash Messages -->
 {% include 'components/messages.html' %}
@@ -10,25 +28,28 @@
 <!-- CSRF Token for JavaScript -->
 {% csrf_token %}
 
+<div class="settings-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2>My Courses</h2>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <div class="search-container">
+                <input type="text" class="form-control" id="courseSearchInput" placeholder="Search courses..." style="border: 2px solid #000000; background-color: #FBF3D5; width: 200px; border-radius: 8px; padding: 8px 12px;">
+            </div>
+            <button type="button" class="btn btn-outline-secondary" id="selectModeBtn" onclick="toggleSelectMode()">
+                <i class="bi bi-three-dots"></i>
+            </button>
+            <button type="button" class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                <i class="bi bi-plus-circle"></i> Add Course
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0">
-                     My Courses
-                </h2>
-                <div class="d-flex gap-2 align-items-center">
-                    <div class="search-container">
-                        <input type="text" class="form-control" id="courseSearchInput" placeholder="Search courses..." style="border: 2px solid #000000; background-color: #FBF3D5; width: 200px; border-radius: 8px; padding: 8px 12px;">
-                    </div>
-                    <button type="button" class="btn btn-outline-secondary" id="selectModeBtn" onclick="toggleSelectMode()">
-                        <i class="bi bi-three-dots"></i>
-                    </button>
-                    <button type="button" class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addCourseModal">
-                        <i class="bi bi-plus-circle"></i> Add Course
-                    </button>
-                </div>
-            </div>
 
             {% if courses %}
                 <div class="row" id="coursesRow">

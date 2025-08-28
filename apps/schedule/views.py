@@ -7,6 +7,7 @@ from django.forms import modelformset_factory
 from datetime import datetime, timedelta
 from .models import ClassSchedule, ScheduleSlot
 from .forms import ClassScheduleForm, ScheduleSlotFormSet, ScheduleSlotForm
+from apps.settingsapp.models import UserSettings
 
 @login_required
 def schedule_view(request):
@@ -16,9 +17,20 @@ def schedule_view(request):
     # Get all schedules for the current user
     schedules = ClassSchedule.objects.filter(user=request.user).prefetch_related('slots')
     
-    # Create a 7-day timetable structure
-    days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    # Get user's week start preference
+    try:
+        user_settings = UserSettings.objects.get(user=request.user)
+        week_start = user_settings.default_week_start
+    except UserSettings.DoesNotExist:
+        week_start = 'monday'  # Default to Monday
+    
+    # Create a 7-day timetable structure based on user preference
+    if week_start == 'sunday':
+        days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+        day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    else:  # monday
+        days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     
     # Get today's day name for highlighting
     today_day = today.strftime('%A').lower()
@@ -75,6 +87,7 @@ def schedule_view(request):
         'day_names': day_names,
         'today_index': today_index,
         'today': today,
+        'week_start': week_start,
     }
     
     return render(request, 'schedule/schedule.html', context)
