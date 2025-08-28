@@ -17,4 +17,5 @@ urlpatterns = [
     path('<int:course_id>/links/add/', views.add_link, name='add_link'),
     path('<int:course_id>/todos/', views.course_todos, name='course_todos'),
     path('<int:course_id>/todos/add/', views.add_course_todo, name='add_course_todo'),
+    path('api/courses/', views.api_courses, name='api_courses'),
 ]
